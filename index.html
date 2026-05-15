@@ -3,124 +3,694 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>opsi-Musterübersicht</title>
+  <title>opsi Musterübersicht</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg:#07120c; --panel:#0c1f14; --panel2:#102a1b; --panel3:#143821;
-      --text:#e9f7ee; --muted:#9bc3aa; --line:#225c38; --accent:#35d06f;
-      --accent2:#1fa957; --danger:#ff6b6b; --code:#051008; --shadow:rgba(0,0,0,.35);
+      --bg: #06120d;
+      --panel: #0b1d15;
+      --panel-2: #0f261b;
+      --panel-3: #143422;
+      --line: #24563a;
+      --line-soft: rgba(68, 152, 103, .32);
+      --text: #e8f6ee;
+      --muted: #9ab8a6;
+      --green: #39d98a;
+      --green-2: #20b86b;
+      --green-soft: rgba(57, 217, 138, .12);
+      --danger: #ff6b6b;
+      --danger-soft: rgba(255, 107, 107, .12);
+      --shadow: 0 18px 60px rgba(0,0,0,.38);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,rgba(53,208,111,.12),transparent 34rem),var(--bg);color:var(--text)}
-    header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1fr 160px auto auto;gap:.75rem;align-items:center;padding:1rem;background:rgba(7,18,12,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:.8rem;color:var(--text);background:#08180f;padding:.75rem .9rem;outline:none;font:inherit} input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(53,208,111,.16)}
-    button{border:1px solid var(--line);border-radius:.8rem;background:var(--panel2);color:var(--text);padding:.75rem 1rem;font-weight:700;cursor:pointer} button:hover{border-color:var(--accent);background:var(--panel3)} button.primary{background:linear-gradient(135deg,var(--accent2),#168f49);border-color:#46e486;color:#041007} button.danger{color:#ffecec;border-color:rgba(255,107,107,.45);background:rgba(255,107,107,.10)}
-    main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:1rem;padding:1rem} .content{min-width:0} .summary{display:flex;flex-wrap:wrap;gap:.5rem;color:var(--muted);margin:.25rem 0 1rem;font-size:.95rem} .pill{border:1px solid var(--line);background:rgba(16,42,27,.78);padding:.35rem .65rem;border-radius:999px}
-    h2{margin:2rem 0 .75rem;color:#caffd9;font-size:1.35rem;border-bottom:1px solid var(--line);padding-bottom:.45rem}
-    article.card{background:linear-gradient(180deg,rgba(16,42,27,.96),rgba(12,31,20,.96));border:1px solid var(--line);border-radius:1rem;margin:0 0 1rem;box-shadow:0 10px 30px var(--shadow);overflow:hidden}
-    .card-head{display:flex;gap:.75rem;justify-content:space-between;align-items:flex-start;padding:1rem;border-bottom:1px solid rgba(34,92,56,.65)} .title{font-weight:800;color:#d9ffe5;font-size:1.04rem;line-height:1.35} .file{color:var(--muted);font-size:.9rem;margin-top:.25rem} .actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
-    pre{margin:0;padding:1rem;white-space:pre-wrap;overflow:auto;background:var(--code);color:#dfffe8;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;line-height:1.45}
-    .chips{display:flex;flex-wrap:wrap;gap:.35rem;padding:0 1rem 1rem} .chip{font-size:.8rem;color:#cff7d9;border:1px solid rgba(53,208,111,.35);background:rgba(53,208,111,.08);border-radius:999px;padding:.22rem .5rem}
-    aside{position:sticky;top:5.2rem;align-self:start;max-height:calc(100vh - 6rem);overflow:auto;background:rgba(12,31,20,.92);border:1px solid var(--line);border-radius:1rem;box-shadow:0 10px 30px var(--shadow)} aside.collapsed{width:54px;overflow:hidden} .toc-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.8rem;border-bottom:1px solid var(--line);font-weight:800} .toc-body{padding:.6rem} .toc-body a{display:block;text-decoration:none;color:var(--muted);padding:.42rem .5rem;border-radius:.55rem;font-size:.88rem} .toc-body a:hover{background:var(--panel2);color:var(--text)} aside.collapsed .toc-title,aside.collapsed .toc-body{display:none}
-    dialog{border:1px solid var(--line);border-radius:1rem;background:var(--panel);color:var(--text);width:min(900px,calc(100vw - 2rem));box-shadow:0 22px 70px rgba(0,0,0,.6)} dialog::backdrop{background:rgba(0,0,0,.6)} .form-grid{display:grid;gap:.75rem} label{font-weight:700;color:#d9ffe5} .muted{color:var(--muted);font-size:.9rem} .row{display:grid;grid-template-columns:1fr 180px;gap:.75rem} .dialog-actions{display:flex;justify-content:space-between;gap:.75rem;margin-top:1rem;flex-wrap:wrap}
-    .hidden{display:none!important} @media(max-width:900px){header{grid-template-columns:1fr} main{grid-template-columns:1fr} aside{position:static;max-height:none} .row{grid-template-columns:1fr}}
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(57, 217, 138, .14), transparent 34rem),
+        radial-gradient(circle at 80% 20%, rgba(32, 184, 107, .08), transparent 30rem),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .hidden { display: none !important; }
+
+    .login-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+    }
+
+    .login-card {
+      width: min(460px, 100%);
+      background: linear-gradient(180deg, rgba(15,38,27,.96), rgba(11,29,21,.96));
+      border: 1px solid var(--line-soft);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .login-card h1 { margin: 0 0 8px; font-size: 28px; }
+    .login-card p { margin: 0 0 24px; color: var(--muted); }
+
+    .field { display: grid; gap: 8px; margin-bottom: 14px; }
+    .field label { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .input, .select, .textarea {
+      width: 100%;
+      color: var(--text);
+      background: #071710;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      outline: none;
+      padding: 12px 14px;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+    .textarea { min-height: 340px; resize: vertical; font-family: var(--mono); line-height: 1.45; }
+
+    .btn {
+      border: 1px solid var(--line-soft);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 800;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--green); }
+    .btn.primary { background: linear-gradient(135deg, var(--green-2), #107d4a); border-color: rgba(57,217,138,.55); color: #03110a; }
+    .btn.danger { background: var(--danger-soft); border-color: rgba(255,107,107,.35); color: #ffd9d9; }
+    .btn.ghost { background: transparent; }
+    .btn.small { padding: 7px 10px; font-size: 12px; border-radius: 10px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(16px);
+      background: rgba(6,18,13,.78);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .topbar-inner {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 20px;
+      margin-right: 330px;
+    }
+
+    .search-row { display: grid; grid-template-columns: minmax(180px, 1fr) 180px; gap: 12px; }
+    .status { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+    .layout { display: grid; grid-template-columns: 1fr 330px; }
+    .main { padding: 24px 24px 60px; min-width: 0; }
+    .intro {
+      background: linear-gradient(180deg, rgba(15,38,27,.86), rgba(11,29,21,.86));
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .intro h1 { margin: 0 0 8px; font-size: 30px; }
+    .intro p { margin: 0; color: var(--muted); }
+
+    .stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: rgba(57,217,138,.07);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .section-card {
+      background: linear-gradient(180deg, rgba(15,38,27,.94), rgba(9,24,17,.94));
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      scroll-margin-top: 92px;
+    }
+    .section-card:target { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft), 0 10px 30px rgba(0,0,0,.18); }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .card-title { margin: 0; font-size: 20px; line-height: 1.2; }
+    .card-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .card-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .calls { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 12px; }
+    .call-link, .code-link {
+      border: 1px solid rgba(57,217,138,.35);
+      color: #bbf7d0;
+      background: rgba(57,217,138,.09);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .call-link:hover, .code-link:hover { border-color: var(--green); background: rgba(57,217,138,.16); }
+
+    .code {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #05120d;
+      border: 1px solid rgba(68,152,103,.24);
+      border-radius: 16px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.45;
+      color: #d8f8e5;
+    }
+    .code-link {
+      display: inline;
+      border-radius: 7px;
+      padding: 1px 4px;
+      font-family: var(--mono);
+      font-size: inherit;
+      border-style: dashed;
+    }
+
+    .toc {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-left: 1px solid var(--line-soft);
+      background: rgba(7,23,16,.86);
+      backdrop-filter: blur(18px);
+      padding: 14px;
+      overflow: auto;
+      z-index: 30;
+    }
+    .toc.collapsed { width: 54px; padding: 14px 8px; overflow: hidden; }
+    .toc.collapsed .toc-body, .toc.collapsed .toc-title span { display: none; }
+    .toc-title { display:flex; align-items:center; justify-content:space-between; gap: 8px; margin-bottom: 12px; }
+    .toc-title h2 { margin:0; font-size: 15px; }
+    .toc-list { display:grid; gap: 6px; }
+    .toc-link {
+      display:block;
+      color: var(--muted);
+      text-decoration:none;
+      font-size: 13px;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .toc-link:hover { color: var(--text); border-color: var(--line-soft); background: rgba(57,217,138,.08); }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0,0,0,.68);
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+    .modal {
+      width: min(880px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--line-soft);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 16px; }
+    .modal-head h2 { margin: 0; }
+    .form-grid { display:grid; grid-template-columns: 1fr 180px 120px; gap: 12px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap: 10px; margin-top: 14px; }
+
+    .toast {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      z-index: 80;
+      max-width: min(520px, calc(100vw - 40px));
+      padding: 12px 14px;
+      background: #0b1d15;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      color: var(--text);
+    }
+    .toast.error { border-color: rgba(255,107,107,.6); color: #ffd9d9; }
+
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: 1fr; }
+      .topbar-inner { margin-right: 0; grid-template-columns: 1fr auto; }
+      .status { display:none; }
+      .toc { position: fixed; right: 0; top: 0; width: 310px; }
+      .search-row { grid-column: 1 / -1; }
+    }
+    @media (max-width: 680px) {
+      .topbar-inner { grid-template-columns: 1fr; }
+      .search-row, .form-grid { grid-template-columns: 1fr; }
+      .card-head { flex-direction: column; }
+      .card-actions { justify-content: flex-start; }
+      .main { padding: 16px; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <input id="search" placeholder="Sektion, Datei oder Muster suchen…" autocomplete="off" />
-    <select id="fileFilter"><option value="all">Alle Dateien</option><option>install.ins</option><option>remove.ins</option><option>remove.inc.ins</option></select>
-    <button class="primary" id="addBtn">+ Neue Gruppe</button>
-    <button id="reloadBtn">Neu laden</button>
-  </header>
-  <main>
-    <section class="content">
-      <div class="summary" id="summary"></div>
-      <div id="list"></div>
-    </section>
-    <aside id="toc">
-      <div class="toc-head"><span class="toc-title">Inhalt</span><button id="tocToggle">›</button></div>
-      <div class="toc-body" id="tocBody"></div>
-    </aside>
-  </main>
-  <dialog id="editor">
-    <form method="dialog" id="editForm">
-      <h3 id="dialogTitle">Gruppe bearbeiten</h3>
-      <input type="hidden" id="rowId" />
-      <div class="form-grid">
-        <div class="row"><div><label for="sectionName">Sektion / Gruppe</label><input id="sectionName" required /></div><div><label for="scriptType">Datei</label><select id="scriptType"><option>install.ins</option><option>remove.ins</option><option>remove.inc.ins</option></select></div></div>
-        <div><label for="relatedSections">Zusammengehörige Sektionen</label><textarea id="relatedSections" rows="3" placeholder="Eine Sektion pro Zeile, z. B. Sub_FilesDelete&#10;Files_Delete"></textarea><div class="muted">Diese Liste steuert die Gruppierung. Sichtbar bleibt die Gruppe als eine Sektion.</div></div>
-        <div><label for="pattern">Musteraufbau</label><textarea id="pattern" rows="18" required></textarea></div>
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <h1>opsi Musterübersicht</h1>
+      <p>Bitte anmelden, um die Sektionen zu laden und zu bearbeiten.</p>
+      <div class="field">
+        <label for="usernameInput">Benutzername</label>
+        <input id="usernameInput" class="input" autocomplete="username" required />
       </div>
-      <div class="dialog-actions"><button type="button" class="danger" id="deleteBtn">Löschen</button><div><button type="button" id="cancelBtn">Abbrechen</button><button class="primary" id="saveBtn">Speichern</button></div></div>
+      <div class="field">
+        <label for="passwordInput">Passwort</label>
+        <input id="passwordInput" class="input" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn primary" type="submit" style="width:100%">Anmelden</button>
     </form>
-  </dialog>
-<script>
-const SUPABASE_URL = 'https://slhsztezkbrgmkuiiozc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsaHN6dGV6a2JyZ21rdWlpb3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzMwNzYsImV4cCI6MjA5NDQwOTA3Nn0.rPfBxRJ53gf5-h5S4MwiQijlIg4BLpsXjRPvtIdQ-PE';
-const TABLE_NAME = 'opsi_section_pattern_groups';
-let client = null;
-let rows = [];
-const fallbackRows = [{"script_type": "install.ins", "section_name": "Sub_LinkFolder → LinkFolder_CreateDesktop, LinkFolder_DeleteDesktop, LinkFolder_Cleanup", "related_sections": ["Sub_LinkFolder", "LinkFolder_CreateDesktop", "LinkFolder_DeleteDesktop", "LinkFolder_Cleanup"], "pattern": "[Sub_LinkFolder]\nif GetProductProperty(\"desktop\", \"False\") = \"True\"\n  LinkFolder_CreateDesktop\nelse\n  if FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n    LinkFolder_DeleteDesktop\n  endif\nendif\n\n[LinkFolder_CreateDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\nset_link\n  name: \"[PRODUKT] File Manager\"\n  target: \"%ProgramFilesSysnativeDir%\\[PRODUKT]\\7zFM.exe\"\nend_link\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT] File Manager\"\n\n[LinkFolder_Cleanup]\nset_basefolder common_programs\nset_subfolder \"sPlan 8.0\"\ndelete_element \"Deinstallation von sPlan 8.0\"", "sort_order": 1}, {"script_type": "install.ins", "section_name": "Sub_Setup → WinBatch_Setup, Sub_HandleExitCode, Files_Copy, opsiservicecall_Reinstall …", "related_sections": ["Sub_Setup", "WinBatch_Setup", "Sub_HandleExitCode", "Files_Copy", "opsiservicecall_Reinstall", "Files_Cleanup", "LinkFolder_Cleanup"], "pattern": "[Sub_Setup]\nif not(FileExists($AppdataPath$ + \"\\Setup_sPlan80.exe\"))\n  LogError \"Fatal: Installer not found!\"\n  IsFatalError\nendif\n\nWinBatch_Setup\nSub_HandleExitCode\n\nif FileExists($AppdataPath$ + \"\\Update_sPlan80.exe\")\n  WinBatch_SetupUpdate\n  Sub_HandleExitCode\nendif\n\n[WinBatch_Setup]\nmsiexec /passive /i \"%ScriptPath%\\data\\7z$Version$$Arch$.msi\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Files_Copy]\ncopy -se \"%ScriptPath%\\data\\*\" \"%opsiTmpDir%\\[PRODUKT]\\\"\n\n[opsiservicecall_Reinstall]\n\"method\":\"setProductActionRequest\"\n\"params\":[\n  \"[PRODUKT]\",\n  \"\",\n  \"setup\"\n]\n\n[Files_Cleanup]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"\n\n[LinkFolder_Cleanup]\nset_basefolder common_programs\nset_subfolder \"sPlan 8.0\"\ndelete_element \"Deinstallation von sPlan 8.0\"", "sort_order": 2}, {"script_type": "install.ins", "section_name": "Sub_ValidateConfig → Sub_HandleExitCode, WinBatch_Setup, Sub_HandleExitCodeMSI", "related_sections": ["Sub_ValidateConfig", "Sub_HandleExitCode", "WinBatch_Setup", "Sub_HandleExitCodeMSI"], "pattern": "[Sub_ValidateConfig]\nSet $ProductKey$ = ComposeString(SplitString(GetProductProperty(\"productkey\", \"\"), \"-\"), \"\")\nif $ProductKey$ = \"\"\n  LogError \"Fatal: no product key given\"\n  IsFatalError\nendif\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[WinBatch_Setup]\nmsiexec /passive /i \"%ScriptPath%\\data\\7z$Version$$Arch$.msi\"\n\n[Sub_HandleExitCodeMSI]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 3}, {"script_type": "install.ins", "section_name": "Sub_Install → WinBatch_Setup64, WinBatch_Setup32, Sub_HandleExitCode", "related_sections": ["Sub_Install", "WinBatch_Setup64", "WinBatch_Setup32", "Sub_HandleExitCode"], "pattern": "[Sub_Install]\nif GetSystemType = \"64 Bit System\"\n  WinBatch_Setup64\nelse\n  WinBatch_Setup32\nendif\n\n[WinBatch_Setup64]\nmsiexec /passive /i \"%ScriptPath%\\data\\[PRODUKT]-5.22.1.2201-MSWin32-x64-299574.msi\"\n\n[WinBatch_Setup32]\n; http://docs.activestate.com/[PRODUKT]/5.8/install.html#windows%20installers\nmsiexec /passive /i \"%ScriptPath%\\data\\[PRODUKT]-5.22.1.2201-MSWin32-x86-64int-299574.msi\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 4}, {"script_type": "install.ins", "section_name": "Sub_Check → Files_Copy, Files_Delete", "related_sections": ["Sub_Check", "Files_Copy", "Files_Delete"], "pattern": "[Sub_Check]\nif GetProductProperty(\"acknowledge\", \"False\") = \"False\"\n  Set $incReportError$ = createStringList(\"-1\", \"Dieses Paket verursacht Probleme nach der Installation. Bitte lesen Sie die Nutzungshinweise bevor Sie mit der Installation fortfahren.\")\n  Sub_ReportError\n  LogError \"Fatal: This package causes problems after Installation. Please read the usage advice before continuing.\"\n  IsFatalError\nendif\n\n[Files_Copy]\ncopy -se \"%ScriptPath%\\data\\*\" \"%opsiTmpDir%\\[PRODUKT]\\\"\n\n[Files_Delete]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"", "sort_order": 5}, {"script_type": "install.ins", "section_name": "Sub_CreateDesktopLink → LinkFolder_CreateDesktop, LinkFolder_DeleteDesktop", "related_sections": ["Sub_CreateDesktopLink", "LinkFolder_CreateDesktop", "LinkFolder_DeleteDesktop"], "pattern": "[Sub_CreateDesktopLink]\nif GetProductProperty(\"desktop\", \"True\") = \"True\"\n  LinkFolder_CreateDesktop\nelse\n  LinkFolder_DeleteDesktop\nendif\n\n[LinkFolder_CreateDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\nset_link\n  name: \"[PRODUKT] File Manager\"\n  target: \"%ProgramFilesSysnativeDir%\\[PRODUKT]\\7zFM.exe\"\nend_link\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT] File Manager\"", "sort_order": 6}, {"script_type": "install.ins", "section_name": "Sub_Registry → Registry_Setup", "related_sections": ["Sub_Registry", "Registry_Setup"], "pattern": "[Sub_Registry]\nRegistry_AddFileAssociation /Sysnative\nRegistry_Setup /Sysnative\nif RegKeyExists(\"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{23170F69-40C1-2702-2600-000001000000}\")\n  Registry_Cleanup /Sysnative\nendif\n\n[Registry_Setup]\nopenkey [HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{23170F69-40C1-2702-2601-000001000000}]\nset \"DisplayIcon\" = REG_SZ:\"%ProgramFilesSysnativeDir%\\[PRODUKT]\\7zFM.exe\"", "sort_order": 7}, {"script_type": "install.ins", "section_name": "Sub_RemovePrevious → WinBatch_Uninstall, Sub_HandleExitCode", "related_sections": ["Sub_RemovePrevious", "WinBatch_Uninstall", "Sub_HandleExitCode"], "pattern": "[Sub_RemovePrevious]\nSub \"%ScriptPath%\\remove.inc.ins\"\n\n[WinBatch_Uninstall]\n\"%SystemDrive%\\giss2017\\unins000.exe\" /silent\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 8}, {"script_type": "install.ins", "section_name": "Sub_CheckInstall → Sub_Install, Sub_HandleExitCode, WinBatch_Setup", "related_sections": ["Sub_CheckInstall", "Sub_Install", "Sub_HandleExitCode", "WinBatch_Setup"], "pattern": "[Sub_CheckInstall]\n; sometimes AirServer doesn't install correctly if it was already installed, so we check if it wasn't installed and then install again\nif not(DirectoryExists(\"%ProgramFiles64Dir%\\WindowsApps\\F3F176BD.AirServer_\"+$Version$+\"_x64__r1wcd7sb8tzge\"))\n  Sub_Install\n  Sub_HandleExitCode\nendif\n\n[Sub_Install]\nif GetSystemType = \"64 Bit System\"\n  WinBatch_Setup64\nelse\n  WinBatch_Setup32\nendif\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[WinBatch_Setup]\nmsiexec /passive /i \"%ScriptPath%\\data\\7z$Version$$Arch$.msi\"", "sort_order": 9}, {"script_type": "install.ins", "section_name": "Sub_Checks → Sub_CheckLicense, Sub_PrepareSetup", "related_sections": ["Sub_Checks", "Sub_CheckLicense", "Sub_PrepareSetup"], "pattern": "[Sub_Checks]\nSub_CheckWinVersion\nSub_CheckLicense\nSub_CheckVersion\nSub_CheckArch\n\n[Sub_CheckLicense]\nSet $Hostname$ = Lower(Trim(TakeString(0, GetReturnListFromSection(\"opsiservicecall_GetHostname\"))))\nif FileExists(\"\\\\\" + $Hostname$ + \"\\appdata\\licenses\\[PRODUKT]\\hbedv.key\")\n  Set $LicPath$ = \"\\\\\" + $Hostname$ + \"\\appdata\\licenses\\[PRODUKT]\"\nelse\n  if FileExists(\"%ScriptPath%\\hbedv.key\")\n    Set $LicPath$ = \"%ScriptPath%\"\n  else\n    LogError \"Fatal: license file hbedv.key not found!\"\n    IsFatalError\n  endif\nendif\n\n[Sub_PrepareSetup]\nSet $Version$ = GetValue(\"productversion\", GetProductMap)\n\nSet $Arch$ = \"-x64\"\nif GetSystemType = \"x86 System\"\n  Set $Arch$ = \"\"\nendif", "sort_order": 10}, {"script_type": "install.ins", "section_name": "Sub_DesktopIcon → LinkFolder_Cleanup, LinkFolder_RemoveDesktop", "related_sections": ["Sub_DesktopIcon", "LinkFolder_Cleanup", "LinkFolder_RemoveDesktop"], "pattern": "[Sub_DesktopIcon]\nif GetProductProperty(\"desktopicon\", \"False\") = \"False\"\n  LinkFolder_Cleanup\nendif\n\n[LinkFolder_Cleanup]\nset_basefolder common_programs\nset_subfolder \"sPlan 8.0\"\ndelete_element \"Deinstallation von sPlan 8.0\"\n\n[LinkFolder_RemoveDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"AutoCAD 2023 - Deutsch (German)\"", "sort_order": 11}, {"script_type": "install.ins", "section_name": "Sub_InstallDriver → WinBatch_SetupDriver, Sub_HandleExitCode", "related_sections": ["Sub_InstallDriver", "WinBatch_SetupDriver", "Sub_HandleExitCode"], "pattern": "[Sub_InstallDriver]\nif GetProductProperty(\"dongledriver\", \"false\") = \"True\"\n  WinBatch_SetupDriver\n  Sub_HandleExitCode\n  else\n  Sub_UninstallDriver\nendif\n\n[WinBatch_SetupDriver]\n\"%ProgramFiles32Dir%\\Didactic\\Festo USB Driver 3.0\\dpinst.exe\" /S\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 12}, {"script_type": "install.ins", "section_name": "Sub_Linkfolder → LinkFolder_Startmenu, LinkFolder_CreateDesktop, LinkFolder_DeleteDesktop, Linkfolder_Cleanup", "related_sections": ["Sub_Linkfolder", "LinkFolder_Startmenu", "LinkFolder_CreateDesktop", "LinkFolder_DeleteDesktop", "Linkfolder_Cleanup"], "pattern": "[Sub_Linkfolder]\nLinkFolder_Startmenu\nif GetProductProperty(\"desktop\", \"False\") = \"True\"\n  LinkFolder_CreateDesktop\nelse\n  LinkFolder_DeleteDesktop\nendif\n\n[LinkFolder_Startmenu]\nset_basefolder common_programs\nset_subfolder \"KELLER\\SYMplus Drehen\"\nset_link\n  name: \"[PRODUKT]\"\n  target: \"%ProgramFiles32Dir%\\KELLER\\KELLERplusDD\\CPMAIN.exe\"\nend_link\n\n[LinkFolder_CreateDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\nset_link\n  name: \"[PRODUKT] File Manager\"\n  target: \"%ProgramFilesSysnativeDir%\\[PRODUKT]\\7zFM.exe\"\nend_link\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT] File Manager\"\n\n[Linkfolder_Cleanup]\nset_basefolder common_programs\nset_subfolder \"[PRODUKT]\"\ndelete_element \"Deinstallieren\"", "sort_order": 13}, {"script_type": "install.ins", "section_name": "Initial", "related_sections": ["Initial"], "pattern": "[Initial]\nMessage=Installiere [PRODUKT]...\nDefVar $Arch$\nDefVar $ExitCode$\nDefVar $Version$", "sort_order": 14}, {"script_type": "install.ins", "section_name": "Actions", "related_sections": ["Actions"], "pattern": "[Actions]\nShowBitmap \"%ScriptPath%\\logo.png\" \"[PRODUKT]\"\nSub_PrepareSetup\nWinBatch_Setup\nSub_HandleExitCode\nSub_LinkFolder\nSub_Registry", "sort_order": 15}, {"script_type": "install.ins", "section_name": "LinkFolder_Setup", "related_sections": ["LinkFolder_Setup"], "pattern": "[LinkFolder_Setup]\nset_basefolder common_programs\nset_subfolder \"Ableton\"\nset_link\n  name: \"[PRODUKT]\"\n  target: \"%CommonAppDataDir%\\Ableton\\Live 10 Intro\\Program\\[PRODUKT].exe\"\nend_link", "sort_order": 16}, {"script_type": "install.ins", "section_name": "Aktionen", "related_sections": ["Aktionen"], "pattern": "[Aktionen]\nShowBitmap \"%ScriptPath%\\logo.png\" \"[PRODUKT]\"\nSub \"%ScriptPath%\\remove.inc.ins\"\nSub_Install\nSub_HandleExitCode", "sort_order": 17}, {"script_type": "install.ins", "section_name": "opsiservicecall_GetHostname", "related_sections": ["opsiservicecall_GetHostname"], "pattern": "[opsiservicecall_GetHostname]\n\"method\":\"iserv_cfg\"\n\"params\":[\n  \"Hostname\"\n]", "sort_order": 18}, {"script_type": "install.ins", "section_name": "DosInAnIcon_Firewall", "related_sections": ["DosInAnIcon_Firewall"], "pattern": "[DosInAnIcon_Firewall]\n; -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n; Should be removed with next update:\nnetsh advfirewall firewall delete rule name=\"IServ [PRODUKT] App\"\n; -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\nnetsh advfirewall firewall delete rule name=\"[PRODUKT]\"\nnetsh advfirewall firewall delete rule name=\"IServ [PRODUKT]\"\nnetsh advfirewall firewall add rule name=\"IServ [PRODUKT]\" profile=any enable=yes protocol=any dir=in action=allow program=\"%ProgramFiles32Dir%\\airtame\\airtame.exe\"", "sort_order": 19}, {"script_type": "install.ins", "section_name": "WinBatch_RemoveOld", "related_sections": ["WinBatch_RemoveOld"], "pattern": "[WinBatch_RemoveOld]\n\"%SystemDrive%\\Oriolus\\Deutsch Klasse 5 bis 6\\unins000.exe\" /Silent", "sort_order": 20}, {"script_type": "install.ins", "section_name": "Files_CopyLicense", "related_sections": ["Files_CopyLicense"], "pattern": "[Files_CopyLicense]\ncopy \"$Path$\\foerderplaner.lic\" \"%ProgramFiles32Dir%\\Förderplaner V2\\\"", "sort_order": 21}, {"script_type": "install.ins", "section_name": "Sub_Reboot", "related_sections": ["Sub_Reboot"], "pattern": "[Sub_Reboot]\nExitWindows /Reboot", "sort_order": 22}, {"script_type": "install.ins", "section_name": "Sub_License", "related_sections": ["Sub_License"], "pattern": "[Sub_License]\nDosInAnIcon_CreateLicense\nSub_ImportLicense", "sort_order": 23}, {"script_type": "install.ins", "section_name": "PatchTextFile_License", "related_sections": ["PatchTextFile_License"], "pattern": "[PatchTextFile_License]\nGoToTop\nAddLine '[Lizenz]'\nAddLine \"Kundennummer=$CustomerID$\"\nAddLine \"Kundenname=$Name$\"\nAddLine \"Seriennummer=$Serialnumber$\"", "sort_order": 24}, {"script_type": "install.ins", "section_name": "Registry_RemoveBootFlag", "related_sections": ["Registry_RemoveBootFlag"], "pattern": "[Registry_RemoveBootFlag]\ndeletekey [$WinstRegKey$]", "sort_order": 25}, {"script_type": "install.ins", "section_name": "Registry_SaveRebootFlag", "related_sections": ["Registry_SaveRebootFlag"], "pattern": "[Registry_SaveRebootFlag]\nopenKey [$WinstRegKey$]\nset \"RebootFlag\" = \"$RebootFlag$\"", "sort_order": 26}, {"script_type": "install.ins", "section_name": "Patches_Licence", "related_sections": ["Patches_Licence"], "pattern": "[Patches_Licence]\nset [Lizenz] Lizenz=$ProductKey$01", "sort_order": 27}, {"script_type": "install.ins", "section_name": "DosInAnIcon_AddFirewall", "related_sections": ["DosInAnIcon_AddFirewall"], "pattern": "[DosInAnIcon_AddFirewall]\nnetsh advfirewall firewall add rule name=\"IServ [PRODUKT]\" dir=in action=allow program=\"%ProgramFiles64Dir%\\[PRODUKT]\\bambu-studio.exe\" enable=\"yes\"", "sort_order": 28}, {"script_type": "install.ins", "section_name": "DosInAnIcon_FixPerms", "related_sections": ["DosInAnIcon_FixPerms"], "pattern": "[DosInAnIcon_FixPerms]\nicacls \"%ProgramFiles64Dir%\\WindowsApps\\F3F176BD.AirServer_$Version$_x64__r1wcd7sb8tzge\" /grant \"*S-1-1-0:F\" /t", "sort_order": 29}, {"script_type": "install.ins", "section_name": "Files_CopyConfig", "related_sections": ["Files_CopyConfig"], "pattern": "[Files_CopyConfig]\ncopy \"%ScriptPath%\\data\\AdobeUberInstaller.xml\" \"%SystemDrive%\\tmp\"\ncopy \"%ScriptPath%\\data\\AdobeUberInstaller.exe\" \"%SystemDrive%\\tmp\"", "sort_order": 30}, {"script_type": "install.ins", "section_name": "Files_CopyIcon", "related_sections": ["Files_CopyIcon"], "pattern": "[Files_CopyIcon]\ncopy \"%ScriptPath%\\data\\add\\icon.ico\" \"%ProgramFiles64Dir%\\WindowsApps\\F3F176BD.AirServer_$Version$_x64__r1wcd7sb8tzge\\\"", "sort_order": 31}, {"script_type": "install.ins", "section_name": "LinkFolder_StartMenu", "related_sections": ["LinkFolder_StartMenu"], "pattern": "[LinkFolder_StartMenu]\nset_basefolder common_programs\nset_subfolder \"\"\nset_link\n  name: \"[PRODUKT]\"\n  target: \"%ProgramFiles32Dir%\\[PRODUKT]\\[PRODUKT].url\"\n  icon_file: \"%ProgramFiles32Dir%\\[PRODUKT]\\favicon.ico\"\nend_link", "sort_order": 32}, {"script_type": "install.ins", "section_name": "Registry_ActiveSetup", "related_sections": ["Registry_ActiveSetup"], "pattern": "[Registry_ActiveSetup]\nopenkey [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\Airserver]\nset \"StubPath\"='reg add \"HKEY_CURRENT_USER\\Software\\App Dynamic\\Airserver$ArchRegistry$\" /v SlowNetwork /d $SlowNetworkValue$ /t REG_DWORD /f'\nSet \"Version\"=\"$ActiveSetupVersion$\"\n\n; -------------------------------------------------------------------------------\n; Configuration option to activate or deactivate AirPlay, GoogleCast and Miracast.\n; -------------------------------------------------------------------------------", "sort_order": 33}, {"script_type": "install.ins", "section_name": "Sub_ImmReboot", "related_sections": ["Sub_ImmReboot"], "pattern": "[Sub_ImmReboot]\nExitWindows /ImmediateReboot\n\n; Use after a finished installation", "sort_order": 34}, {"script_type": "install.ins", "section_name": "XMLPatch_Config", "related_sections": ["XMLPatch_Config"], "pattern": "[XMLPatch_Config]\n- warning_when_no_node_existing false\n- create_when_node_not_existing true\nopenNodeSet 'DeploymentInfo/Deployment/Properties/Property name=\"serialNumber\"'\nSetText \"$ProductKey$\"", "sort_order": 35}, {"script_type": "install.ins", "section_name": "Patches_Config", "related_sections": ["Patches_Config"], "pattern": "[Patches_Config]\nset [Ident] Seriennummer=$ProductKey$", "sort_order": 36}, {"script_type": "install.ins", "section_name": "DosInAnIcon_Cert", "related_sections": ["DosInAnIcon_Cert"], "pattern": "[DosInAnIcon_Cert]\ncertutil -addstore \"TrustedPublisher\" \"%ScriptPath%\\certs\\[PRODUKT]-llc.cer\"\ncertutil -addstore \"TrustedPublisher\" \"%ScriptPath%\\certs\\[PRODUKT]-srl.cer\"", "sort_order": 37}, {"script_type": "install.ins", "section_name": "DosInAnIcon_mkdir", "related_sections": ["DosInAnIcon_mkdir"], "pattern": "[DosInAnIcon_mkdir]\nmkdir \"%CurrentProfileDir%\\Documents\"", "sort_order": 38}, {"script_type": "install.ins", "section_name": "LinkFolder_CleanUp", "related_sections": ["LinkFolder_CleanUp"], "pattern": "[LinkFolder_CleanUp]\nset_basefolder common_programs\nset_subfolder \"[PRODUKT]\"\ndelete_element \"Deinstallation von [PRODUKT]\"", "sort_order": 39}, {"script_type": "install.ins", "section_name": "LinkFolder_Delete", "related_sections": ["LinkFolder_Delete"], "pattern": "[LinkFolder_Delete]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT]\"", "sort_order": 40}, {"script_type": "install.ins", "section_name": "LinkFolder_Tool", "related_sections": ["LinkFolder_Tool"], "pattern": "[LinkFolder_Tool]\nset_basefolder common_programs\nset_subfolder \"Diesterweg/[PRODUKT] Mathe\"\nset_link\n   name: \"[PRODUKT] Mathe - Lehrertool\"\n   target: \"\\\\$Hostname$\\appdata\\[PRODUKT]\\prog\\WIN\\tool.exe\"\nend_link", "sort_order": 41}, {"script_type": "install.ins", "section_name": "Patches_Ini", "related_sections": ["Patches_Ini"], "pattern": "[Patches_Ini]\nset [schroedel] path=\\\\iserv\\appdata\\[PRODUKT]\\KONFETTI\\prog\\win", "sort_order": 42}, {"script_type": "install.ins", "section_name": "WinBatch_Setupx64", "related_sections": ["WinBatch_Setupx64"], "pattern": "[WinBatch_Setupx64]\n\"%ScriptPath%\\data\\iview_$Version$_x64_setup.exe\" /silent /desktop=0 /group=1 /allusers=1 /assoc=1", "sort_order": 43}, {"script_type": "install.ins", "section_name": "Files_Setup", "related_sections": ["Files_Setup"], "pattern": "[Files_Setup]\ncopy \"%ScriptPath%\\data\\*\" \"%System%\\\"", "sort_order": 44}, {"script_type": "install.ins", "section_name": "LinkFolder_CreateTool", "related_sections": ["LinkFolder_CreateTool"], "pattern": "[LinkFolder_CreateTool]\nset_basefolder common_programs\nset_subfolder \"Mildenberger\"\nset_link\n  name: \"Lehrertool\"\n  target: \"%ProgramFiles32Dir%\\Mildenberger\\[PRODUKT] 1 14397\\[PRODUKT] Lehrertool\\[PRODUKT] Lehrertool.exe\"\nend_link", "sort_order": 45}, {"script_type": "install.ins", "section_name": "LinkFolder_DeleteTool", "related_sections": ["LinkFolder_DeleteTool"], "pattern": "[LinkFolder_DeleteTool]\nset_basefolder common_programs\nset_subfolder \"Mildenberger\"\ndelete_element Lehrertool", "sort_order": 46}, {"script_type": "install.ins", "section_name": "LinkFolder_DelFile", "related_sections": ["LinkFolder_DelFile"], "pattern": "[LinkFolder_DelFile]\nset_basefolder common_programs\nset_subfolder \"Diesterweg\\Bausteine 1-2 Whiteboard\"\ndelete_element \"Bausteine 1-2 Whiteboard entfernen\"", "sort_order": 47}, {"script_type": "install.ins", "section_name": "LinkFolder_SetupA", "related_sections": ["LinkFolder_SetupA"], "pattern": "[LinkFolder_SetupA]\nset_basefolder common_programs\nset_subfolder \"Cornelsen\\[PRODUKT] Unterrichtssoftware\"\nset_link\n  name: \"Sch ler A1\"\n  target: \"$Pfad$\\StartupLoader.exe\"\n  parameters: \"RTREL:DBRELA\"\n  working_dir: \"$Pfad$\"\n  icon_file: \"$Pfad$\\A1.ico\"\nend_link", "sort_order": 48}, {"script_type": "install.ins", "section_name": "LinkFolder_SetupB", "related_sections": ["LinkFolder_SetupB"], "pattern": "[LinkFolder_SetupB]\nset_basefolder common_programs\nset_subfolder \"Cornelsen\\[PRODUKT] Unterrichtssoftware\"\nset_link\n  name: \"Sch ler B1\"\n  target: \"$Pfad$\\StartupLoader.exe\"\n  parameters: \"RTREL:DBRELB\"\n  working_dir: \"$Pfad$\"\n  icon_file: \"$Pfad$\\B1.ico\"\nend_link", "sort_order": 49}, {"script_type": "install.ins", "section_name": "LinkFolder_SetupD", "related_sections": ["LinkFolder_SetupD"], "pattern": "[LinkFolder_SetupD]\nset_basefolder common_programs\nset_subfolder \"Cornelsen\\[PRODUKT] Unterrichtssoftware\"\nset_link\n  name: \"Sch ler D1\"\n  target: \"$Pfad$\\StartupLoader.exe\"\n  parameters: \"RTREL:DBRELD\"\n  working_dir: \"$Pfad$\"\n  icon_file: \"$Pfad$\\D1.ico\"\nend_link", "sort_order": 50}, {"script_type": "install.ins", "section_name": "Patches_lizenz.ini", "related_sections": ["Patches_lizenz.ini"], "pattern": "[Patches_lizenz.ini]\nSet [Lizenz] Lizenz=$License$", "sort_order": 51}, {"script_type": "install.ins", "section_name": "WinBatch_Setupx86", "related_sections": ["WinBatch_Setupx86"], "pattern": "[WinBatch_Setupx86]\n\"%opsiTmpDir%\\[PRODUKT]\\aspnetcore-runtime-$Version$-win-x86.exe\" /q", "sort_order": 52}, {"script_type": "install.ins", "section_name": "DosInAnIcon_KillRunningInstances", "related_sections": ["DosInAnIcon_KillRunningInstances"], "pattern": "[DosInAnIcon_KillRunningInstances]\ntaskkill /im \"client32.exe\" /f", "sort_order": 53}, {"script_type": "install.ins", "section_name": "DosInAnIcon_RemovePreviousTask", "related_sections": ["DosInAnIcon_RemovePreviousTask"], "pattern": "[DosInAnIcon_RemovePreviousTask]\nschtasks /Delete /TN \"PPTService\" /F", "sort_order": 54}, {"script_type": "install.ins", "section_name": "DosInAnIcon_TaskKill", "related_sections": ["DosInAnIcon_TaskKill"], "pattern": "[DosInAnIcon_TaskKill]\ntaskkill /im \"iexplore.exe\" /f\ntaskkill /im \"OpenWith.exe\" /f", "sort_order": 55}, {"script_type": "install.ins", "section_name": "Patches_License", "related_sections": ["Patches_License"], "pattern": "[Patches_License]\nSet [_License] serial_no=$Serial$\nSet [_License] maxslaves=$MaxClients$\nSet [_License] licensee=$Licensee$\nSet [_License] expiry=", "sort_order": 56}, {"script_type": "install.ins", "section_name": "Sub_PrepInstall", "related_sections": ["Sub_PrepInstall"], "pattern": "[Sub_PrepInstall]\n; Variable can be used for system dependent dirs or filenames\nSet $Arch$ = \"x86\"\nif GetSystemType = \"64 Bit System\"\n  Set $Arch$ = \"x64\"\nendif\n\n; Path to \\data (\"%ScriptPath%\\data\"   or   \"%opsiTmpDir%\\[PRODUKT]\")\n; If you want to copy files set $dir$ to \"%opsiTmpDir%\\[PRODUKT]\"\nSet $dir$ = \"%ScriptPath%\\data\"\nif GetProductProperty(\"copyInstaller\", \"False\") = \"True\"\n  Set $dir$ = \"%opsiTmpDir%\\[PRODUKT]\"\nendif\n\n; If you are in \"copymode\" you can specify if to copy a single file (true) or the whole folder (false)\nSet $SingleFile$ = GetProductProperty(\"copySingleFile\", \"True\")\n\n; Change this to the dir names between \\data\\.. and ..\\installer.exe. Use a final \"\\\"!!\n; Ok: \"\\dir1\\dir2\\dir3\\\"   or    \"\\\"   or   \"\\this\\\"\n; NOT ok: \"\\this\"   or   \"this\"   or   \"this\\\"   or   \"\"   or   \"\\dir1\\dir2\"   or   \"dir1\\dir2\"   or   \"dir1\\dir2\\\"\nSet $AddPath$ = GetProductProperty(\"addPath\", \"\\\")\n; Use this for installmethod 4\nSet $AddPath2$ = GetProductProperty(\"addPath2\", \"\\\")\n\n; Change this to the full installer name, like \"installer.exe\" or \"this.is.an.installer-1.0.msi\"\nSet $Name$ = GetProductProperty(\"installerName\", \"\")\n; Use this for installmethod 4\nSet $Name2$ = GetProductProperty(\"installerName2\", \"\")\n\n; Full path + installer\nSet $fn$ = $dir$ + $AddPath$ + $Name$\n; Used for installmethod 4\nSet $fn2$ = $dir$ + $AddPath2$ + $Name2$\n\n; Use this for all parameters, like \"/S\" or \"/SILENT /NOCANCEL /NORESTART\" or \"ALLUSERS=1\"\nSet $Params$ = GetProductProperty(\"installParameter\", \"\")\n; Use t\n...", "sort_order": 57}, {"script_type": "install.ins", "section_name": "WinBatch_AddCer", "related_sections": ["WinBatch_AddCer"], "pattern": "[WinBatch_AddCer]\ncertutil -f -addstore \"TrustedPublisher\" \"%ScriptPath%\\add\\cybernetyx_1.cer\"\ncertutil -f -addstore \"TrustedPublisher\" \"%ScriptPath%\\add\\cybernetyx_2.cer\"", "sort_order": 58}, {"script_type": "install.ins", "section_name": "WinBatch_Setup86", "related_sections": ["WinBatch_Setup86"], "pattern": "[WinBatch_Setup86]\n\"%opsiTmpDir%\\[PRODUKT]\\vcredist_x86.exe\" /Q /C:\"msiexec /passive /i vcredist.msi\"", "sort_order": 59}, {"script_type": "install.ins", "section_name": "WinBatchSetup", "related_sections": ["WinBatchSetup"], "pattern": "[WinBatchSetup]\n;\"%ScriptPath%\\data\\setup_hotpot_6305.exe\" /silent /nocancel\n\"%ScriptDrive%\\tools\\AutoIt3.exe\" \"%ScriptPath%\\install.au3\" \"%ScriptPath%\\data\\setup_hotpot_6305.exe\" \" /silent /nocancel\"", "sort_order": 60}, {"script_type": "install.ins", "section_name": "DosInAnIcon_MkDir", "related_sections": ["DosInAnIcon_MkDir"], "pattern": "[DosInAnIcon_MkDir]\nmkdir \"%CurrentProfileDir%\\Documents\"", "sort_order": 61}, {"script_type": "install.ins", "section_name": "LinkFolder_CreatePrograms", "related_sections": ["LinkFolder_CreatePrograms"], "pattern": "[LinkFolder_CreatePrograms]\nset_basefolder common_programs\nset_subfolder \"[PRODUKT]\"\nset_link\n  name: \"[PRODUKT]\"\n  target: \"\\\\$Hostname$\\appdata\\[PRODUKT]\\prog\\WIN\\PBLS1.exe\"\n  icon_file: \"\\\\$Hostname$\\appdata\\[PRODUKT]\\prog\\WIN\\start.ico\"\nend_link", "sort_order": 62}, {"script_type": "install.ins", "section_name": "LinkFolder_DeleteFiles", "related_sections": ["LinkFolder_DeleteFiles"], "pattern": "[LinkFolder_DeleteFiles]\nset_basefolder common_programs\nset_subfolder \"fabmaker Slicer\"\ndelete_element \"Uninstall\"\ndelete_element \"Website\"\ndelete_element \"fabmaker Slicer\"\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Fabmaker Anwenderhandbücher\"", "sort_order": 63}, {"script_type": "install.ins", "section_name": "LinkFolder_ProgramIcons", "related_sections": ["LinkFolder_ProgramIcons"], "pattern": "[LinkFolder_ProgramIcons]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT] 2.9 SP1 (x64)\"", "sort_order": 64}, {"script_type": "install.ins", "section_name": "LinkFolder_Remove", "related_sections": ["LinkFolder_Remove"], "pattern": "[LinkFolder_Remove]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Word\"\ndelete_element \"Excel\"\ndelete_element \"Powerpoint\"\ndelete_element \"Outlook\"\ndelete_element \"OneNote\"\ndelete_element \"Word 2021\"\ndelete_element \"Excel 2021\"\ndelete_element \"Powerpoint 2021\"\ndelete_element \"Outlook 2021\"\ndelete_element \"OneNote 2021\"", "sort_order": 65}, {"script_type": "install.ins", "section_name": "LinkFolder_SetupP", "related_sections": ["LinkFolder_SetupP"], "pattern": "[LinkFolder_SetupP]\nset_basefolder common_programs\nset_subfolder \"Cornelsen\\[PRODUKT] Unterrichtssoftware\"\nset_link\n  name: \"Schüler D4EA\"\n  target: \"$Pfad$\\SmartMain.exe\"\n  parameters: \"RTREL:DBRELP\"\n  working_dir: \"$Pfad$\"\n  icon_file: \"$Pfad$\\D4.ico\"\nend_link", "sort_order": 66}, {"script_type": "install.ins", "section_name": "Registry_SetVersion", "related_sections": ["Registry_SetVersion"], "pattern": "[Registry_SetVersion]\nOpenKey [[REGISTRY]\\[PRODUKT]]\nSet \"InstalledVersion\" = REG_SZ:\"$Version$\"", "sort_order": 67}, {"script_type": "install.ins", "section_name": "Sub_Prepare", "related_sections": ["Sub_Prepare"], "pattern": "[Sub_Prepare]\nSet $MSVersion$ = GetMsVersionInfo\nSet $BuildNumber$ = GetValue(\"build_number\", GetMsVersionMap)\nSet $WinVersion$ = \"\"\n\n; Windows 11 Detection (Windows 10 mit Build >= 22000)\nif CompareDotSeparatedNumbers($MSVersion$, \"=\", \"10.0\") and CompareDotSeparatedNumbers($BuildNumber$, \">=\", \"22000\")\n  Set $WinVersion$ = \"11.0\"\nelse\n  Set $WinVersion$ = $MSVersion$\nendif", "sort_order": 68}, {"script_type": "install.ins", "section_name": "WinBatch_SetACL", "related_sections": ["WinBatch_SetACL"], "pattern": "[WinBatch_SetACL]\n; [PRODUKT] requires write permissions to it's program folder... to write log\n; files. And it's workspace. Some people never learn.\n; S-1-1-0: Everyone\n\"%ScriptPath%\\SetACL.exe\" -on \"%ProgramFilesDir%\\[PRODUKT]\" -ot file -actn ace -ace \"n:S-1-1-0;p:full;s:y\"", "sort_order": 69}, {"script_type": "install.ins", "section_name": "WinBatch_UninstallOld", "related_sections": ["WinBatch_UninstallOld"], "pattern": "[WinBatch_UninstallOld]\n\"%ProgramFiles32Dir%\\IPEVO\\Presenter\\unins000.exe\" /VERYSILENT", "sort_order": 70}, {"script_type": "remove.ins", "section_name": "Sub_Uninstall → WinBatch_Uninstall, Sub_HandleExitCode, Sub_LinkFolder, Registry_Cleanup …", "related_sections": ["Sub_Uninstall", "WinBatch_Uninstall", "Sub_HandleExitCode", "Sub_LinkFolder", "Registry_Cleanup", "WinBatch_Uninstall64"], "pattern": "[Sub_Uninstall]\nif FileExists(\"%ProgramFilesSysnativeDir%\\[PRODUKT]\\7zFM.exe\")\n  WinBatch_Uninstall\n  Sub_HandleExitCode\n  Sub_LinkFolder\n  Registry_Cleanup /SysNative\nendif\n\n[WinBatch_Uninstall]\n\"%ScriptDrive%\\tools\\autoit\\msiRemove_withLog.exe\" \"[PRODUKT]\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Sub_LinkFolder]\nif FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n  LinkFolder_DeleteDesktop\nendif\n\n[Registry_Cleanup]\ndeletekey [HKLM\\SOFTWARE\\Classes\\.7z]\ndeletekey [HKLM\\SOFTWARE\\Classes\\[PRODUKT].7z]\ndeletekey [HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{23170F69-40C1-2702-2601-000001000000}]\n\n[WinBatch_Uninstall64]\nmsiexec /passive /x \"%ScriptPath%\\data\\[PRODUKT]-5.22.1.2201-MSWin32-x64-299574.msi\"", "sort_order": 71}, {"script_type": "remove.ins", "section_name": "Sub_LinkFolder → LinkFolder_DeleteDesktop", "related_sections": ["Sub_LinkFolder", "LinkFolder_DeleteDesktop"], "pattern": "[Sub_LinkFolder]\nif FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n  LinkFolder_DeleteDesktop\nendif\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT] File Manager\"", "sort_order": 72}, {"script_type": "remove.ins", "section_name": "Sub_Cleanup → Files_Delete, LinkFolder_DeleteStartmenu, ExecWith_RemoveEmptyProgramsFolder", "related_sections": ["Sub_Cleanup", "Files_Delete", "LinkFolder_DeleteStartmenu", "ExecWith_RemoveEmptyProgramsFolder"], "pattern": "[Sub_Cleanup]\nif DirectoryExists(\"C:\\Program Files\\[PRODUKT]\")\n  Files_Delete\nendif\n\nif FileExists(\"%CommonProgramsDir%\\GpgOL-Web.LNK\")\n  LinkFolder_DeleteStartmenu\nendif\n\n[Files_Delete]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"\n\n[LinkFolder_DeleteStartmenu]\nset_basefolder common_programs\ndelete_subfolder \"[PRODUKT]\"\n\n[ExecWith_RemoveEmptyProgramsFolder]\n; deleting empty folders is not that easy in winst!\n; https://forum.opsi.org/viewtopic.php?f=7&t=2475\nSet shell = CreateObject(\"WScript.Shell\")\nSet fso = CreateObject(\"Scripting.FileSystemObject\")\npath = shell.SpecialFolders(\"ProgramFilesX86\") & \"\\Diesterweg\"\nIf fso.FolderExists(path) Then\n  Set d = fso.GetFolder(path)\n  If d.Files.Count = 0 And d.SubFolders.Count = 0 Then\n    fso.DeleteFolder(path)\n  End If\nEnd If", "sort_order": 73}, {"script_type": "remove.ins", "section_name": "Sub_Remove → Files_CleanUp, WinBatch_Uninstall, Sub_HandleExitCode", "related_sections": ["Sub_Remove", "Files_CleanUp", "WinBatch_Uninstall", "Sub_HandleExitCode"], "pattern": "[Sub_Remove]\nSub \"%ScriptPath%\\remove.inc.ins\"\n\n[Files_CleanUp]\ndelete -sf \"%ProgramFiles32Dir%\\Avid\\\"\n\n[WinBatch_Uninstall]\n\"%ScriptDrive%\\tools\\autoit\\msiRemove_withLog.exe\" \"[PRODUKT]\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 74}, {"script_type": "remove.ins", "section_name": "Sub_RemoveEmptyFolder → ExecWith_RemoveEmptyFolder", "related_sections": ["Sub_RemoveEmptyFolder", "ExecWith_RemoveEmptyFolder"], "pattern": "[Sub_RemoveEmptyFolder]\nSet $Path$ = \"\\Cornelsen\\[PRODUKT] Unterrichtssoftware\"\nExecWith_RemoveEmptyFolder \"cscript\" \"//E:VBS\"\nSet $Path$ = \"\\Cornelsen\"\nExecWith_RemoveEmptyFolder \"cscript\" \"//E:VBS\"\n\n[ExecWith_RemoveEmptyFolder]\n; deleting empty folders is not that easy in winst!\n; https://forum.opsi.org/viewtopic.php?f=7&t=2475\nSet shell = CreateObject(\"WScript.Shell\")\nSet fso = CreateObject(\"Scripting.FileSystemObject\")\npath = shell.SpecialFolders(\"AllUsersPrograms\") & \"\\Certiport\"\nIf fso.FolderExists(path) Then\n  Set d = fso.GetFolder(path)\n  If d.Files.Count = 0 And d.SubFolders.Count = 0 Then\n    fso.DeleteFolder(path)\n  End If\nEnd If", "sort_order": 75}, {"script_type": "remove.ins", "section_name": "Initial", "related_sections": ["Initial"], "pattern": "[Initial]\nMessage=Deinstalliere [PRODUKT]...\nDefVar $ExitCode$", "sort_order": 76}, {"script_type": "remove.ins", "section_name": "Actions", "related_sections": ["Actions"], "pattern": "[Actions]\nShowBitmap \"%ScriptPath%\\logo.png\" \"[PRODUKT]\"\nSub_Uninstall", "sort_order": 77}, {"script_type": "remove.ins", "section_name": "Aktionen", "related_sections": ["Aktionen"], "pattern": "[Aktionen]\nShowBitmap \"%ScriptPath%\\logo.png\" \"[PRODUKT]\"\nSub_Uninstall", "sort_order": 78}, {"script_type": "remove.ins", "section_name": "Files_Cleanup", "related_sections": ["Files_Cleanup"], "pattern": "[Files_Cleanup]\ndelete -sf \"%CommonAppdataDir%\\Affinity\\Designer\\\"\ndelete -sf \"%ProgramFiles64Dir%\\Affinity\\Designer 2\\\"", "sort_order": 79}, {"script_type": "remove.ins", "section_name": "LinkFolder_Cleanup", "related_sections": ["LinkFolder_Cleanup"], "pattern": "[LinkFolder_Cleanup]\nset_basefolder common_programs\ndelete_subfolder \"[PRODUKT] v3\"", "sort_order": 80}, {"script_type": "remove.ins", "section_name": "LinkFolder_Delete", "related_sections": ["LinkFolder_Delete"], "pattern": "[LinkFolder_Delete]\nset_basefolder common_programs\ndelete_subfolder \"[PRODUKT]\"\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT]\"", "sort_order": 81}, {"script_type": "remove.ins", "section_name": "ExecWith_RemoveEmptyProgramFolder", "related_sections": ["ExecWith_RemoveEmptyProgramFolder"], "pattern": "[ExecWith_RemoveEmptyProgramFolder]\n; deleting empty folders is not that easy in winst!\n; https://forum.opsi.org/viewtopic.php?f=7&t=2475\nSet shell = CreateObject(\"WScript.Shell\")\nSet fso = CreateObject(\"Scripting.FileSystemObject\")\npath = shell.SpecialFolders(\"AllUsersPrograms\") & \"\\AVM\"\nIf fso.FolderExists(path) Then\n  Set d = fso.GetFolder(path)\n  If d.Files.Count = 0 And d.SubFolders.Count = 0 Then\n    fso.DeleteFolder(path)\n  End If\nEnd If", "sort_order": 82}, {"script_type": "remove.ins", "section_name": "LinkFolder_Remove", "related_sections": ["LinkFolder_Remove"], "pattern": "[LinkFolder_Remove]\nset_basefolder common_programs\ndelete_subfolder \"[PRODUKT]\"\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT]\"", "sort_order": 83}, {"script_type": "remove.ins", "section_name": "Sub_PrepareSetup", "related_sections": ["Sub_PrepareSetup"], "pattern": "[Sub_PrepareSetup]\nSet $Arch$ = \"32\"\nif GetSystemType = \"64 Bit System\"\n  Set $Arch$ = \"64\"\nendif\nSet $Version$ = getValue(\"productversion\", getProductMap)", "sort_order": 84}, {"script_type": "remove.ins", "section_name": "LinkFolder_Uninstall", "related_sections": ["LinkFolder_Uninstall"], "pattern": "[LinkFolder_Uninstall]\nset_basefolder common_programs\ndelete_subfolder \"[PRODUKT]\"", "sort_order": 85}, {"script_type": "remove.ins", "section_name": "DosInAnIcon_Firewall", "related_sections": ["DosInAnIcon_Firewall"], "pattern": "[DosInAnIcon_Firewall]\nnetsh advfirewall firewall delete rule name=\"[PRODUKT]\"\nnetsh advfirewall firewall delete rule name=\"IServ [PRODUKT]\"\n; -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n; Should be removed with next update:\nnetsh advfirewall firewall delete rule name=\"IServ [PRODUKT] App\"\n; -- -- -- -- -- --", "sort_order": 86}, {"script_type": "remove.ins", "section_name": "Files_Remove", "related_sections": ["Files_Remove"], "pattern": "[Files_Remove]\ndelete -sf \"%ProgramFiles32Dir%\\[PRODUKT]\"", "sort_order": 87}, {"script_type": "remove.ins", "section_name": "Sub_PrepareUninstall", "related_sections": ["Sub_PrepareUninstall"], "pattern": "[Sub_PrepareUninstall]\nif GetSystemType = \"64 Bit System\"\n  Set $Arch$ = \"x64\"\nelse\n  Set $Arch$ = \"x86\"\nendif", "sort_order": 88}, {"script_type": "remove.ins", "section_name": "LinkFolder_Setup", "related_sections": ["LinkFolder_Setup"], "pattern": "[LinkFolder_Setup]\nset_basefolder common_programs\nset_subfolder \"AVM\"\ndelete_element \"FRITZ!Box Fernzugang\"", "sort_order": 89}, {"script_type": "remove.ins", "section_name": "WinBatch_RemoveOld", "related_sections": ["WinBatch_RemoveOld"], "pattern": "[WinBatch_RemoveOld]\n\"%SystemDrive%\\Oriolus\\Deutsch Klasse 7 bis 9\\unins000.exe\" /Silent", "sort_order": 90}, {"script_type": "remove.ins", "section_name": "Files_Copy", "related_sections": ["Files_Copy"], "pattern": "[Files_Copy]\n; This is necessary because otherwise the uninstaller won't start.\ncopy \"%ScriptPath%\\data\\AdobeAIR.exe\" \"%opsiTmpDir%\\[PRODUKT]\\\"", "sort_order": 91}, {"script_type": "remove.ins", "section_name": "Sub_Reboot", "related_sections": ["Sub_Reboot"], "pattern": "[Sub_Reboot]\n; important to finish uninstall\nExitWindows /Reboot", "sort_order": 92}, {"script_type": "remove.ins", "section_name": "ExecWith_RemoveEmptySystemFolder", "related_sections": ["ExecWith_RemoveEmptySystemFolder"], "pattern": "[ExecWith_RemoveEmptySystemFolder]\n; deleting empty folders is not that easy in winst!\n; https://forum.opsi.org/viewtopic.php?f=7&t=2475\nSet shell = CreateObject(\"WScript.Shell\")\nSet fso = CreateObject(\"Scripting.FileSystemObject\")\npath = \"%ProgramFiles32Dir%\\Eaton\"\nIf fso.FolderExists(path) Then\n  Set d = fso.GetFolder(path)\n  If d.Files.Count = 0 And d.SubFolders.Count = 0 Then\n    fso.DeleteFolder(path)\n  End If\nEnd If", "sort_order": 93}, {"script_type": "remove.ins", "section_name": "LinkFolder_CleanUp", "related_sections": ["LinkFolder_CleanUp"], "pattern": "[LinkFolder_CleanUp]\nset_basefolder common_programs\ndelete_subfolder \"AK Kappenberg 2018\"", "sort_order": 94}, {"script_type": "remove.ins", "section_name": "LinkFolder_RemoveDesktop", "related_sections": ["LinkFolder_RemoveDesktop"], "pattern": "[LinkFolder_RemoveDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"[PRODUKT]\"", "sort_order": 95}, {"script_type": "remove.ins", "section_name": "WinBatch_Uninstall32", "related_sections": ["WinBatch_Uninstall32"], "pattern": "[WinBatch_Uninstall32]\nmsiexec /passive /x \"%ScriptPath%\\data\\eea_nt32_deu.msi\" $Password$ /norestart", "sort_order": 96}, {"script_type": "remove.ins", "section_name": "ExecWith_RemoveEmptySchroedelFolder", "related_sections": ["ExecWith_RemoveEmptySchroedelFolder"], "pattern": "[ExecWith_RemoveEmptySchroedelFolder]\n; deleting empty folders is not that easy in winst!\n; https://forum.opsi.org/viewtopic.php?f=7&t=2475\nSet shell = CreateObject(\"WScript.Shell\")\nSet fso = CreateObject(\"Scripting.FileSystemObject\")\npath = \"%CommonAppdataDir%\\Schroedel\"\nIf fso.FolderExists(path) Then\n  Set d = fso.GetFolder(path)\n  If d.Files.Count = 0 And d.SubFolders.Count = 0 Then\n    fso.DeleteFolder(path)\n  End If\nEnd If", "sort_order": 97}, {"script_type": "remove.ins", "section_name": "WinBatch_Setup", "related_sections": ["WinBatch_Setup"], "pattern": "[WinBatch_Setup]\nmsiexec /passive /x \"%ScriptPath%\\data\\AirParrot$Version$-$Arch$.msi\"", "sort_order": 98}, {"script_type": "remove.ins", "section_name": "WinBatch_Uninstallx64", "related_sections": ["WinBatch_Uninstallx64"], "pattern": "[WinBatch_Uninstallx64]\n\"%CommonAppdataDir%\\Package Cache\\{65fddc17-d55b-46b7-a750-5c179fef3d81}\\AspNetCoreSharedFrameworkBundle-x64.exe\" /uninstall /quiet /norestart", "sort_order": 99}, {"script_type": "remove.ins", "section_name": "WinBatch_Uninstallx86", "related_sections": ["WinBatch_Uninstallx86"], "pattern": "[WinBatch_Uninstallx86]\n\"%CommonAppdataDir%\\Package Cache\\{b52191c1-a9c0-4b34-9a4e-930c2dd8a540}\\AspNetCoreSharedFrameworkBundle-x86.exe\"  /uninstall /quiet /norestart", "sort_order": 100}, {"script_type": "remove.ins", "section_name": "Files_Uninstall", "related_sections": ["Files_Uninstall"], "pattern": "[Files_Uninstall]\ndelete -f \"%System%\\[PRODUKT].*\"", "sort_order": 101}, {"script_type": "remove.ins", "section_name": "Sub_KillTask", "related_sections": ["Sub_KillTask"], "pattern": "[Sub_KillTask]\nKillTask \"PyImageOm.exe\"\nKillTask \"debugger.exe\"\nKillTask \"dynamicAlgorithm.exe\"", "sort_order": 102}, {"script_type": "remove.ins", "section_name": "WinBatch_Uninstall_Other", "related_sections": ["WinBatch_Uninstall_Other"], "pattern": "[WinBatch_Uninstall_Other]\n\"%ScriptDrive%\\tools\\autoit\\msiRemove_withLog.exe\" \"Freedom Scientific\"", "sort_order": 103}, {"script_type": "remove.ins", "section_name": "WinBatch_Uninstall_Sentinal", "related_sections": ["WinBatch_Uninstall_Sentinal"], "pattern": "[WinBatch_Uninstall_Sentinal]\n\"%ScriptDrive%\\tools\\autoit\\msiRemove_withLog.exe\" \"Sentinel System Driver Installer\"", "sort_order": 104}, {"script_type": "remove.inc.ins", "section_name": "Sub_Uninstall → WinBatch_Uninstall, Sub_HandleExitCode, Sub_HandleExitCodeUninst, Sub_LinkFolderUninst", "related_sections": ["Sub_Uninstall", "WinBatch_Uninstall", "Sub_HandleExitCode", "Sub_HandleExitCodeUninst", "Sub_LinkFolderUninst"], "pattern": "[Sub_Uninstall]\nif FileExists(\"%CommonAppdataDir%\\Ableton\\Live 10 Intro\\Program\\Ableton Live 10 Intro.exe\")\n    WinBatch_Uninstall\n    Sub_HandleExitCode\nendif\n\n[WinBatch_Uninstall]\nmsiexec /passive /x \"%ScriptPath%\\data\\Setup.msi\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Sub_HandleExitCodeUninst]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"3010\" or $ExitCode$ = \"1605\")\n  ; 0    ERROR_SUCCESS\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Sub_LinkFolderUninst]\nLinkFolder_DeleteStartmenu\n\nif FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n  LinkFolder_DeleteDesktop\nendif", "sort_order": 105}, {"script_type": "remove.inc.ins", "section_name": "Sub_LinkFolderUninst → LinkFolder_DeleteStartmenu, LinkFolder_DeleteDesktop, LinkFolder_RemoveDesktop", "related_sections": ["Sub_LinkFolderUninst", "LinkFolder_DeleteStartmenu", "LinkFolder_DeleteDesktop", "LinkFolder_RemoveDesktop"], "pattern": "[Sub_LinkFolderUninst]\nLinkFolder_DeleteStartmenu\n\nif FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n  LinkFolder_DeleteDesktop\nendif\n\n[LinkFolder_DeleteStartmenu]\nset_basefolder common_programs\nset_subfolder \"\"\ndelete_element \"Adobe Acrobat Reader\"\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Adobe Acrobat Reader\"\n\n[LinkFolder_RemoveDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Blender\"", "sort_order": 106}, {"script_type": "remove.inc.ins", "section_name": "Sub_PrepareUninstall → Sub_Uninstall, LinkFolder_Delete, Registry_SaveRebootFlag, opsiservicecall_Reinstall …", "related_sections": ["Sub_PrepareUninstall", "Sub_Uninstall", "LinkFolder_Delete", "Registry_SaveRebootFlag", "opsiservicecall_Reinstall", "Registry_RemoveBootFlag"], "pattern": "[Sub_PrepareUninstall]\nSet $RebootFlag$ = getRegistryValue(\"[REGISTRY]\\[PRODUKT]\", \"RebootFlag\")\nif not($RebootFlag$ = \"1\")\n  if FileExists(\"%ProgramFiles64Dir%\\AirParrot 3\\AirParrot3.exe\")\n    Sub_Uninstall\n    LinkFolder_Delete\n    Set $RebootFlag$ = \"1\"\n    Registry_SaveRebootFlag /SysNative\n    opsiservicecall_Reinstall\n    ExitWindows /ImmediateReboot\n  endif\nendif\nRegistry_RemoveBootFlag /SysNative\n\n[Sub_Uninstall]\nif FileExists(\"%CommonAppdataDir%\\Ableton\\Live 10 Intro\\Program\\Ableton Live 10 Intro.exe\")\n    WinBatch_Uninstall\n    Sub_HandleExitCode\nendif\n\n[LinkFolder_Delete]\nset_basefolder common_programs\ndelete_subfolder \"Ableton\"\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Ableton\"\ndelete_element \"Ableton 10\"\ndelete_element \"Ableton Live 10 Intro\"\n\n[Registry_SaveRebootFlag]\nOpenKey [[REGISTRY]\\[PRODUKT]]\nSet \"RebootFlag\" = REG_SZ:\"$RebootFlag$\"\n\n[opsiservicecall_Reinstall]\n\"method\":\"setProductActionRequest\"\n\"params\":[\n  \"[PRODUKT]\",\n  \"\",\n  \"$ProductAction$\"\n]\n\n[Registry_RemoveBootFlag]\nDeleteKey [[REGISTRY]\\[PRODUKT]]", "sort_order": 107}, {"script_type": "remove.inc.ins", "section_name": "Sub_Cleanup → Files_Delete", "related_sections": ["Sub_Cleanup", "Files_Delete"], "pattern": "[Sub_Cleanup]\nif DirectoryExists(\"%ProgramFiles32Dir%\\EShare\")\n  Files_Delete\nendif\n\n[Files_Delete]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"\ndelete -sf \"%ProgramFiles64Dir%\\WindowsApps\\F3F176BD.AirServer_$InstVersion$_x64__r1wcd7sb8tzge\\\")", "sort_order": 108}, {"script_type": "remove.inc.ins", "section_name": "Sub_UninstallOld → WinBatch_UninstallOld, Sub_HandleExitCodeUninstall, WinBatch_Uninstall, Sub_HandleExitCode …", "related_sections": ["Sub_UninstallOld", "WinBatch_UninstallOld", "Sub_HandleExitCodeUninstall", "WinBatch_Uninstall", "Sub_HandleExitCode", "Files_CleanupUninstall"], "pattern": "[Sub_UninstallOld]\nWinBatch_UninstallOld\nSub_HandleExitCodeUninstall\nWinBatch_UninstallOld\nSub_HandleExitCodeUninstall\n\n[WinBatch_UninstallOld]\n\"%ScriptDrive%\\tools\\autoit\\msiRemove_withLog.exe\" \"AdoptOpenJDK JRE\"\n\n[Sub_HandleExitCodeUninstall]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n    ; 0    ERROR_SUCCESS\n    ; 1605 ERROR_UNKNOWN_PRODUCT\n    ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n    LogError \"Fatal: setup returned exit code \" + $ExitCode$\n    IsFatalError\nendif\n\n[WinBatch_Uninstall]\nmsiexec /passive /x \"%ScriptPath%\\data\\Setup.msi\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Files_CleanupUninstall]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"", "sort_order": 109}, {"script_type": "remove.inc.ins", "section_name": "Sub_LinkFolder → LinkFolder_DeleteStartmenu, LinkFolder_DeleteDesktop, LinkFolder_Delete", "related_sections": ["Sub_LinkFolder", "LinkFolder_DeleteStartmenu", "LinkFolder_DeleteDesktop", "LinkFolder_Delete"], "pattern": "[Sub_LinkFolder]\nLinkFolder_DeleteStartmenu\n\nif FileExists(\"%CommonDesktopDir%\\[PRODUKT].LNK\")\n  LinkFolder_DeleteDesktop\nendif\n\n[LinkFolder_DeleteStartmenu]\nset_basefolder common_programs\nset_subfolder \"\"\ndelete_element \"Adobe Acrobat Reader\"\n\n[LinkFolder_DeleteDesktop]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Adobe Acrobat Reader\"\n\n[LinkFolder_Delete]\nset_basefolder common_programs\ndelete_subfolder \"Ableton\"\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Ableton\"\ndelete_element \"Ableton 10\"\ndelete_element \"Ableton Live 10 Intro\"", "sort_order": 110}, {"script_type": "remove.inc.ins", "section_name": "Sub_PrepareRemove → WinBatch_Uninstall, Sub_HandleExitCode, Files_Delete", "related_sections": ["Sub_PrepareRemove", "WinBatch_Uninstall", "Sub_HandleExitCode", "Files_Delete"], "pattern": "[Sub_PrepareRemove]\nif FileExists(\"%ProgramFiles32Dir%\\PSPad editor\\Uninst\\unins000.exe\")\n  WinBatch_Uninstall\n  Sub_HandleExitCode\nendif\n\n[WinBatch_Uninstall]\nmsiexec /passive /x \"%ScriptPath%\\data\\Setup.msi\"\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Files_Delete]\ndelete -sf \"%opsiTmpDir%\\[PRODUKT]\\\"\ndelete -sf \"%ProgramFiles64Dir%\\WindowsApps\\F3F176BD.AirServer_$InstVersion$_x64__r1wcd7sb8tzge\\\")", "sort_order": 111}, {"script_type": "remove.inc.ins", "section_name": "Sub_Registry → Registry_Cleanup", "related_sections": ["Sub_Registry", "Registry_Cleanup"], "pattern": "[Sub_Registry]\nif RegKeyExists(\"HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Autodesk Licensing Service\")\n  Registry_Cleanup /SysNative\nendif\n\n[Registry_Cleanup]\nOpenKey [[REGISTRY]\\[PRODUKT]]\nSet \"Uninstall\" = REG_DWORD:0\n\nOpenKey [HKLM\\SYSTEM\\CurrentControlSet\\control\\Session Manager\\Environment]\nDeleteVar \"JAVA32_HOME\"", "sort_order": 112}, {"script_type": "remove.inc.ins", "section_name": "Sub_Uninstall64 → WinBatch_Uninstall64, Sub_HandleExitCode, Files_Cleanup", "related_sections": ["Sub_Uninstall64", "WinBatch_Uninstall64", "Sub_HandleExitCode", "Files_Cleanup"], "pattern": "[Sub_Uninstall64]\nSet $RegKeyList$ = getRegistryKeyListSysnative(\"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\")\nfor $64Key$ in $RegKeyList$ do Sub_CheckKey64\n\n[WinBatch_Uninstall64]\n\"%ProgramFiles64Dir%\\IrfanView\\iv_uninstall.exe\" /silent\n\n[Sub_HandleExitCode]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif\n\n[Files_Cleanup]\ndel -sf \"%CommonAppdataDir%\\Ableton\\Live 11 Intro\\\"", "sort_order": 113}, {"script_type": "remove.inc.ins", "section_name": "LinkFolder_Cleanup", "related_sections": ["LinkFolder_Cleanup"], "pattern": "[LinkFolder_Cleanup]\nset_basefolder common_programs\ndelete_subfolder \"Adobe Photoshop Elements 11\"", "sort_order": 114}, {"script_type": "remove.inc.ins", "section_name": "DosInAnIcon_DeleteFirewall", "related_sections": ["DosInAnIcon_DeleteFirewall"], "pattern": "[DosInAnIcon_DeleteFirewall]\nnetsh advfirewall firewall delete rule name=\"IServ Bambu Studio\"", "sort_order": 115}, {"script_type": "remove.inc.ins", "section_name": "Sub_HandleExitCode_Uninstall", "related_sections": ["Sub_HandleExitCode_Uninstall"], "pattern": "[Sub_HandleExitCode_Uninstall]\n; check return code\nSet $ExitCode$ = GetLastExitCode\ncomment \"GetLastExitCode: \" + $ExitCode$\nif not($ExitCode$ = \"0\" or $ExitCode$ = \"1605\" or $ExitCode$ = \"3010\")\n  ; 0    ERROR_SUCCESS\n  ; 1605 ERROR_UNKNOWN_PRODUCT\n  ; 3010 ERROR_SUCCESS_REBOOT_REQUIRED\n  LogError \"Fatal: setup returned exit code \" + $ExitCode$\n  IsFatalError\nendif", "sort_order": 116}, {"script_type": "remove.inc.ins", "section_name": "DosInAnIcon_Firewall", "related_sections": ["DosInAnIcon_Firewall"], "pattern": "[DosInAnIcon_Firewall]\nnetsh advfirewall firewall delete rule name=\"IServ Arduino\"", "sort_order": 117}, {"script_type": "remove.inc.ins", "section_name": "Files_CopyUninstall", "related_sections": ["Files_CopyUninstall"], "pattern": "[Files_CopyUninstall]\ncopy \"%ScriptPath%\\data\\add\\remove.ps1\" \"%opsiTmpDir%\\[PRODUKT]\\\"", "sort_order": 118}, {"script_type": "remove.inc.ins", "section_name": "Files_Remove", "related_sections": ["Files_Remove"], "pattern": "[Files_Remove]\ndelete -sf \"%ProgramFiles64Dir%\\Perpustakaan\"", "sort_order": 119}, {"script_type": "remove.inc.ins", "section_name": "Sub_KillTask", "related_sections": ["Sub_KillTask"], "pattern": "[Sub_KillTask]\nKillTask \"[PRODUKT].exe\"", "sort_order": 120}, {"script_type": "remove.inc.ins", "section_name": "WinBatch_Uninstall32", "related_sections": ["WinBatch_Uninstall32"], "pattern": "[WinBatch_Uninstall32]\n\"%ProgramFiles32Dir%\\Algodoo\\unins000.exe\" /SILENT", "sort_order": 121}, {"script_type": "remove.inc.ins", "section_name": "LinkFolder_Remove", "related_sections": ["LinkFolder_Remove"], "pattern": "[LinkFolder_Remove]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Word\"\ndelete_element \"Excel\"\ndelete_element \"Powerpoint\"\ndelete_element \"Outlook\"\ndelete_element \"OneNote\"", "sort_order": 122}, {"script_type": "remove.inc.ins", "section_name": "DosInAnIcon_TaskKill", "related_sections": ["DosInAnIcon_TaskKill"], "pattern": "[DosInAnIcon_TaskKill]\nKillTask \"msedge.exe\"", "sort_order": 123}, {"script_type": "remove.inc.ins", "section_name": "LinkFolder_Uninstall", "related_sections": ["LinkFolder_Uninstall"], "pattern": "[LinkFolder_Uninstall]\nset_basefolder common_desktopdirectory\nset_subfolder \"\"\ndelete_element \"Oriolus Lernprogramme\"\nset_basefolder common_programs\nset_subfolder \"\"\ndelete_subfolder \"Oriolus Lernprogramme\"", "sort_order": 124}, {"script_type": "remove.inc.ins", "section_name": "Registry_Delete", "related_sections": ["Registry_Delete"], "pattern": "[Registry_Delete]\nDeleteKey [[REGISTRY]\\[PRODUKT]]", "sort_order": 125}];
-const $ = (id) => document.getElementById(id);
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
-function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9äöüß]+/gi,'-').replace(/^-|-$/g,'');}
-function initClient(){ if(!SUPABASE_URL.includes('DEIN-PROJEKT') && !SUPABASE_ANON_KEY.includes('DEIN_')) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
-async function loadRows(){
-  initClient();
-  if(!client){ rows=[...fallbackRows]; render(); return; }
-  const {data,error} = await client.from(TABLE_NAME).select('*').order('script_type').order('sort_order').order('section_name');
-  if(error){ rows=[...fallbackRows]; render('Lokale Daten angezeigt'); return; }
-  rows=data||[]; render('Bereit');
-}
-function filteredRows(){
-  const q=$('search').value.trim().toLowerCase(); const f=$('fileFilter').value;
-  return rows.filter(r=>{
-    if(f!=='all' && r.script_type!==f) return false;
-    if(!q) return true;
-    return [r.section_name,r.script_type,r.pattern,(r.related_sections||[]).join(' ')].join('\n').toLowerCase().includes(q);
-  });
-}
-function render(msg=''){
-  const data=filteredRows();
-  const by={'install.ins':[], 'remove.ins':[], 'remove.inc.ins':[]}; data.forEach(r=>by[r.script_type]?.push(r));
-  $('summary').innerHTML=`<span class="pill">${data.length} Gruppen</span><span class="pill">install.ins: ${by['install.ins'].length}</span><span class="pill">remove.ins: ${by['remove.ins'].length}</span><span class="pill">remove.inc.ins: ${by['remove.inc.ins'].length}</span>${msg?`<span class="pill">${esc(msg)}</span>`:''}`;
-  let html=''; let toc='';
-  for(const type of ['install.ins','remove.ins','remove.inc.ins']){
-    if(!by[type].length) continue;
-    const gid=slug(type); html+=`<h2 id="${gid}">${type}</h2>`; toc+=`<a href="#${gid}"><strong>${type}</strong></a>`;
-    by[type].forEach((r,i)=>{
-      const id=r.id || `local-${type}-${i}`; const aid=slug(type+'-'+r.section_name);
-      toc+=`<a href="#${aid}">${esc(r.section_name)}</a>`;
-      const chips=(r.related_sections||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');
-      html+=`<article class="card" id="${aid}"><div class="card-head"><div><div class="title">${esc(r.section_name)}</div><div class="file">${esc(r.script_type)}</div></div><div class="actions"><button onclick="copyPattern('${id}')">Kopieren</button><button onclick="openEditor('${id}')">Bearbeiten</button></div></div>${chips?`<div class="chips">${chips}</div>`:''}<pre>${esc(r.pattern)}</pre></article>`;
+  </div>
+
+  <div id="appView" class="hidden">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="search-row">
+          <input id="searchInput" class="input" placeholder="Sektion oder Muster suchen ..." />
+          <select id="typeFilter" class="select">
+            <option value="all">Alle Dateien</option>
+            <option value="install.ins">install.ins</option>
+            <option value="remove.ins">remove.ins</option>
+            <option value="remove.inc.ins">remove.inc.ins</option>
+          </select>
+        </div>
+        <button id="newBtn" class="btn primary" type="button">+ Sektion</button>
+        <button id="reloadBtn" class="btn" type="button">Neu laden</button>
+        <button id="logoutBtn" class="btn ghost" type="button">Abmelden</button>
+        <div id="status" class="status">Bereit</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main class="main">
+        <section class="intro">
+          <h1>opsi Musterübersicht</h1>
+          <p>Einzelsektionen mit klickbaren Verbindungen zu aufgerufenen Sektionen.</p>
+          <div id="stats" class="stats"></div>
+        </section>
+        <div id="content"></div>
+      </main>
+
+      <aside id="toc" class="toc">
+        <div class="toc-title">
+          <h2><span>Inhaltsverzeichnis</span></h2>
+          <button id="tocToggle" class="btn small" type="button">⇔</button>
+        </div>
+        <div id="tocBody" class="toc-body">
+          <div id="tocList" class="toc-list"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <form id="editForm" class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">Sektion bearbeiten</h2>
+        <button id="closeModalBtn" class="btn small" type="button">Schließen</button>
+      </div>
+      <input id="editId" type="hidden" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="editSectionName">Sektion</label>
+          <input id="editSectionName" class="input" placeholder="[Sub_Beispiel]" required />
+        </div>
+        <div class="field">
+          <label for="editScriptType">Datei</label>
+          <select id="editScriptType" class="select" required>
+            <option value="install.ins">install.ins</option>
+            <option value="remove.ins">remove.ins</option>
+            <option value="remove.inc.ins">remove.inc.ins</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editSortOrder">Sortierung</label>
+          <input id="editSortOrder" class="input" type="number" value="9999" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="editPattern">Musteraufbau</label>
+        <textarea id="editPattern" class="textarea" required></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="deleteBtn" class="btn danger" type="button">Löschen</button>
+        <button class="btn primary" type="submit">Speichern</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://slhsztezkbrgmkuiiozc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsaHN6dGV6a2JyZ21rdWlpb3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzMwNzYsImV4cCI6MjA5NDQwOTA3Nn0.rPfBxRJ53gf5-h5S4MwiQijlIg4BLpsXjRPvtIdQ-PE';
+
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const els = {
+      loginView: document.getElementById('loginView'),
+      appView: document.getElementById('appView'),
+      loginForm: document.getElementById('loginForm'),
+      usernameInput: document.getElementById('usernameInput'),
+      passwordInput: document.getElementById('passwordInput'),
+      searchInput: document.getElementById('searchInput'),
+      typeFilter: document.getElementById('typeFilter'),
+      newBtn: document.getElementById('newBtn'),
+      reloadBtn: document.getElementById('reloadBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      status: document.getElementById('status'),
+      stats: document.getElementById('stats'),
+      content: document.getElementById('content'),
+      toc: document.getElementById('toc'),
+      tocToggle: document.getElementById('tocToggle'),
+      tocList: document.getElementById('tocList'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      editForm: document.getElementById('editForm'),
+      modalTitle: document.getElementById('modalTitle'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      editId: document.getElementById('editId'),
+      editSectionName: document.getElementById('editSectionName'),
+      editScriptType: document.getElementById('editScriptType'),
+      editSortOrder: document.getElementById('editSortOrder'),
+      editPattern: document.getElementById('editPattern'),
+      deleteBtn: document.getElementById('deleteBtn'),
+      toast: document.getElementById('toast')
+    };
+
+    let sections = [];
+    let sessionToken = sessionStorage.getItem('opsi_session_token') || '';
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function cssId(id) {
+      return 'sec-' + String(id).replace(/[^a-zA-Z0-9_-]/g, '-');
+    }
+
+    function sectionClean(name) {
+      return String(name || '').replace(/^\[/, '').replace(/\]$/, '');
+    }
+
+    function setStatus(text) {
+      els.status.textContent = text;
+    }
+
+    function showToast(message, isError = false) {
+      els.toast.textContent = message;
+      els.toast.classList.toggle('error', isError);
+      els.toast.classList.remove('hidden');
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => els.toast.classList.add('hidden'), 4200);
+    }
+
+    function showApp(isLoggedIn) {
+      els.loginView.classList.toggle('hidden', isLoggedIn);
+      els.appView.classList.toggle('hidden', !isLoggedIn);
+      if (!isLoggedIn) {
+        sections = [];
+        els.passwordInput.value = '';
+        setTimeout(() => els.usernameInput.focus(), 30);
+      }
+    }
+
+    async function login(username, password) {
+      setStatus('Anmeldung ...');
+      const { data, error } = await client.rpc('opsi_app_login', {
+        p_username: username,
+        p_password: password
+      });
+      if (error) throw error;
+      if (!data || !data[0] || !data[0].token) throw new Error('Anmeldung fehlgeschlagen');
+      sessionToken = data[0].token;
+      sessionStorage.setItem('opsi_session_token', sessionToken);
+      showApp(true);
+      await loadSections();
+    }
+
+    async function logout() {
+      if (sessionToken) {
+        await client.rpc('opsi_app_logout', { p_token: sessionToken });
+      }
+      sessionToken = '';
+      sessionStorage.removeItem('opsi_session_token');
+      showApp(false);
+    }
+
+    async function loadSections() {
+      if (!sessionToken) {
+        showApp(false);
+        return;
+      }
+      setStatus('Daten werden geladen ...');
+      const { data, error } = await client.rpc('opsi_list_sections', { p_token: sessionToken });
+      if (error) {
+        if (String(error.message || '').toLowerCase().includes('angemeldet')) await logout();
+        throw error;
+      }
+      sections = Array.isArray(data) ? data : [];
+      setStatus('Geladen');
+      render();
+    }
+
+    function filteredSections() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      const type = els.typeFilter.value;
+      return sections.filter(row => {
+        const typeOk = type === 'all' || row.script_type === type;
+        const text = `${row.section_name}\n${row.script_type}\n${row.pattern}\n${(row.called_sections || []).join(' ')}`.toLowerCase();
+        return typeOk && (!q || text.includes(q));
+      });
+    }
+
+    function findTarget(sectionName, scriptType) {
+      const exact = sections.find(row => row.section_name === sectionName && row.script_type === scriptType);
+      if (exact) return exact;
+      return sections.find(row => row.section_name === sectionName) || null;
+    }
+
+    function jumpToSection(sectionName, scriptType) {
+      const target = findTarget(sectionName, scriptType);
+      if (!target) {
+        showToast('Zielsektion nicht gefunden: ' + sectionName, true);
+        return;
+      }
+      const element = document.getElementById(cssId(target.id));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', '#' + cssId(target.id));
+      }
+    }
+
+    function renderPattern(row) {
+      let html = escapeHtml(row.pattern || '');
+      const calls = row.called_sections || [];
+      calls
+        .map(name => ({ full: name, clean: sectionClean(name) }))
+        .sort((a, b) => b.clean.length - a.clean.length)
+        .forEach(call => {
+          const escapedClean = call.clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp('\\b' + escapedClean + '\\b', 'g');
+          html = html.replace(regex, `<button class="code-link" type="button" data-jump="${escapeHtml(call.full)}" data-type="${escapeHtml(row.script_type)}">${escapeHtml(call.clean)}</button>`);
+        });
+      return html;
+    }
+
+    function renderStats(rows) {
+      const counts = {
+        'install.ins': sections.filter(r => r.script_type === 'install.ins').length,
+        'remove.ins': sections.filter(r => r.script_type === 'remove.ins').length,
+        'remove.inc.ins': sections.filter(r => r.script_type === 'remove.inc.ins').length
+      };
+      els.stats.innerHTML = `
+        <span class="pill">Sichtbar: ${rows.length}</span>
+        <span class="pill">install.ins: ${counts['install.ins']}</span>
+        <span class="pill">remove.ins: ${counts['remove.ins']}</span>
+        <span class="pill">remove.inc.ins: ${counts['remove.inc.ins']}</span>
+      `;
+    }
+
+    function render() {
+      const rows = filteredSections();
+      renderStats(rows);
+      els.content.innerHTML = rows.map(row => {
+        const calls = (row.called_sections || []).map(call => {
+          const target = findTarget(call, row.script_type);
+          const href = target ? '#' + cssId(target.id) : '#';
+          return `<a class="call-link" href="${href}" data-jump="${escapeHtml(call)}" data-type="${escapeHtml(row.script_type)}">${escapeHtml(call)}</a>`;
+        }).join('');
+
+        return `
+          <article id="${cssId(row.id)}" class="section-card" data-id="${escapeHtml(row.id)}">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">${escapeHtml(row.section_name)}</h2>
+                <div class="card-meta">
+                  <span class="pill">${escapeHtml(row.script_type)}</span>
+                  <span class="pill">Aufrufe: ${(row.called_sections || []).length}</span>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn small" type="button" data-copy="${escapeHtml(row.id)}">Kopieren</button>
+                <button class="btn small" type="button" data-edit="${escapeHtml(row.id)}">Bearbeiten</button>
+              </div>
+            </div>
+            ${calls ? `<div class="calls">${calls}</div>` : ''}
+            <div class="code">${renderPattern(row)}</div>
+          </article>
+        `;
+      }).join('') || '<section class="intro"><p>Keine passenden Sektionen gefunden.</p></section>';
+
+      els.tocList.innerHTML = rows.map(row => `
+        <a class="toc-link" href="#${cssId(row.id)}" title="${escapeHtml(row.section_name)}">
+          ${escapeHtml(row.script_type)} · ${escapeHtml(row.section_name)}
+        </a>
+      `).join('');
+    }
+
+    function openEditor(row = null) {
+      const isNew = !row;
+      els.modalTitle.textContent = isNew ? 'Neue Sektion' : 'Sektion bearbeiten';
+      els.editId.value = row?.id || '';
+      els.editSectionName.value = row?.section_name || '[Neue_Sektion]';
+      els.editScriptType.value = row?.script_type || (els.typeFilter.value === 'all' ? 'install.ins' : els.typeFilter.value);
+      els.editSortOrder.value = row?.sort_order ?? 9999;
+      els.editPattern.value = row?.pattern || '[Neue_Sektion]\n';
+      els.deleteBtn.classList.toggle('hidden', isNew);
+      els.modalBackdrop.classList.remove('hidden');
+      setTimeout(() => els.editSectionName.focus(), 30);
+    }
+
+    function closeEditor() {
+      els.modalBackdrop.classList.add('hidden');
+    }
+
+    async function saveEditor(event) {
+      event.preventDefault();
+      const id = els.editId.value;
+      const payload = {
+        p_token: sessionToken,
+        p_section_name: els.editSectionName.value.trim(),
+        p_script_type: els.editScriptType.value,
+        p_pattern: els.editPattern.value,
+        p_sort_order: Number(els.editSortOrder.value || 9999)
+      };
+
+      setStatus('Speichern ...');
+      const { error } = id
+        ? await client.rpc('opsi_update_section', { ...payload, p_id: id })
+        : await client.rpc('opsi_create_section', payload);
+
+      if (error) throw error;
+      closeEditor();
+      await loadSections();
+      showToast('Gespeichert');
+    }
+
+    async function deleteCurrent() {
+      const id = els.editId.value;
+      if (!id) return;
+      if (!confirm('Diese Sektion wirklich löschen?')) return;
+      setStatus('Löschen ...');
+      const { error } = await client.rpc('opsi_delete_section', { p_token: sessionToken, p_id: id });
+      if (error) throw error;
+      closeEditor();
+      await loadSections();
+      showToast('Gelöscht');
+    }
+
+    document.addEventListener('click', async event => {
+      const jump = event.target.closest('[data-jump]');
+      if (jump) {
+        event.preventDefault();
+        jumpToSection(jump.dataset.jump, jump.dataset.type);
+        return;
+      }
+
+      const edit = event.target.closest('[data-edit]');
+      if (edit) {
+        const row = sections.find(item => item.id === edit.dataset.edit);
+        if (row) openEditor(row);
+        return;
+      }
+
+      const copy = event.target.closest('[data-copy]');
+      if (copy) {
+        const row = sections.find(item => item.id === copy.dataset.copy);
+        if (row) {
+          await navigator.clipboard.writeText(row.pattern || '');
+          showToast('Muster kopiert');
+        }
+      }
     });
-  }
-  $('list').innerHTML=html || '<div class="pill">Keine Treffer</div>'; $('tocBody').innerHTML=toc;
-}
-function getById(id){return rows.find(r=>(r.id||`local-${r.script_type}-${rows.indexOf(r)}`)===id);}
-window.copyPattern=async(id)=>{const r=getById(id); if(r) await navigator.clipboard.writeText(r.pattern||'');};
-window.openEditor=(id)=>{const r=getById(id); if(!r)return; $('dialogTitle').textContent='Gruppe bearbeiten'; $('rowId').value=r.id||''; $('sectionName').value=r.section_name||''; $('scriptType').value=r.script_type||'install.ins'; $('relatedSections').value=(r.related_sections||[]).join('\n'); $('pattern').value=r.pattern||''; $('deleteBtn').classList.toggle('hidden', !r.id); $('editor').showModal();};
-$('addBtn').onclick=()=>{$('dialogTitle').textContent='Neue Gruppe'; $('rowId').value=''; $('sectionName').value=''; $('scriptType').value='install.ins'; $('relatedSections').value=''; $('pattern').value=''; $('deleteBtn').classList.add('hidden'); $('editor').showModal();};
-$('cancelBtn').onclick=()=>$('editor').close();
-$('editForm').onsubmit=async(e)=>{
-  e.preventDefault();
-  const payload={section_name:$('sectionName').value.trim(), script_type:$('scriptType').value, related_sections:$('relatedSections').value.split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean), pattern:$('pattern').value, sort_order:rows.length+1};
-  if(!payload.related_sections.length) payload.related_sections=[payload.section_name];
-  const id=$('rowId').value;
-  if(client){
-    const q=id ? client.from(TABLE_NAME).update(payload).eq('id',id) : client.from(TABLE_NAME).insert(payload);
-    const {error}=await q; if(error){alert('Speichern fehlgeschlagen: '+error.message);return;}
-    $('editor').close(); await loadRows();
-  } else {
-    if(id){const idx=rows.findIndex(r=>r.id===id); if(idx>=0) rows[idx]={...rows[idx],...payload};}
-    else rows.unshift({...payload,id:'local-'+Date.now()});
-    $('editor').close(); render('Lokal geändert');
-  }
-};
-$('deleteBtn').onclick=async()=>{const id=$('rowId').value; if(!id||!confirm('Diese Gruppe löschen?'))return; if(client){const {error}=await client.from(TABLE_NAME).delete().eq('id',id); if(error){alert('Löschen fehlgeschlagen: '+error.message);return;} $('editor').close(); await loadRows();} };
-$('search').addEventListener('input',()=>render()); $('fileFilter').addEventListener('change',()=>render()); $('reloadBtn').onclick=loadRows; $('tocToggle').onclick=()=>$('toc').classList.toggle('collapsed');
-loadRows();
-</script>
+
+    els.loginForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        await login(els.usernameInput.value.trim(), els.passwordInput.value);
+      } catch (error) {
+        showToast(error.message || 'Anmeldung fehlgeschlagen', true);
+        setStatus('Fehler');
+      }
+    });
+
+    els.searchInput.addEventListener('input', render);
+    els.typeFilter.addEventListener('change', render);
+    els.newBtn.addEventListener('click', () => openEditor());
+    els.reloadBtn.addEventListener('click', () => loadSections().catch(error => showToast(error.message, true)));
+    els.logoutBtn.addEventListener('click', () => logout().catch(() => showApp(false)));
+    els.tocToggle.addEventListener('click', () => els.toc.classList.toggle('collapsed'));
+    els.closeModalBtn.addEventListener('click', closeEditor);
+    els.modalBackdrop.addEventListener('click', event => { if (event.target === els.modalBackdrop) closeEditor(); });
+    els.editForm.addEventListener('submit', event => saveEditor(event).catch(error => showToast(error.message, true)));
+    els.deleteBtn.addEventListener('click', () => deleteCurrent().catch(error => showToast(error.message, true)));
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeEditor();
+    });
+
+    if (sessionToken) {
+      showApp(true);
+      loadSections().catch(error => {
+        showToast(error.message || 'Laden fehlgeschlagen', true);
+        logout().catch(() => showApp(false));
+      });
+    } else {
+      showApp(false);
+    }
+  </script>
 </body>
 </html>
