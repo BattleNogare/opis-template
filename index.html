@@ -102,7 +102,7 @@
     }
     .topbar-inner {
       display: grid;
-      grid-template-columns: 1fr auto auto auto;
+      grid-template-columns: 1fr auto auto auto auto;
       gap: 12px;
       align-items: center;
       padding: 14px 20px;
@@ -241,6 +241,29 @@
     .modal-head h2 { margin: 0; }
     .form-grid { display:grid; grid-template-columns: 1fr 180px 120px; gap: 12px; }
     .modal-actions { display:flex; justify-content:flex-end; gap: 10px; margin-top: 14px; }
+    .history-list { display: grid; gap: 12px; }
+    .history-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 16px;
+      background: rgba(57,217,138,.05);
+      padding: 14px;
+    }
+    .history-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom: 8px; }
+    .history-title { font-weight:900; }
+    .history-meta { color: var(--muted); font-size: 12px; display:flex; gap:8px; flex-wrap:wrap; }
+    .history-pre {
+      margin: 10px 0 0;
+      white-space: pre-wrap;
+      overflow-wrap:anywhere;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.4;
+      color: #d8f8e5;
+      background: #05120d;
+      border: 1px solid rgba(68,152,103,.24);
+      border-radius: 12px;
+      padding: 10px;
+    }
 
     .toast {
       position: fixed;
@@ -304,6 +327,7 @@
         </div>
         <button id="newBtn" class="btn primary" type="button">+ Sektion</button>
         <button id="reloadBtn" class="btn" type="button">Neu laden</button>
+        <button id="historyBtn" class="btn" type="button">History</button>
         <button id="logoutBtn" class="btn ghost" type="button">Abmelden</button>
         <div id="status" class="status">Bereit</div>
       </div>
@@ -367,6 +391,19 @@
     </form>
   </div>
 
+
+  <div id="historyBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <section class="modal">
+      <div class="modal-head">
+        <h2>Änderungsverlauf</h2>
+        <button id="closeHistoryBtn" class="btn small" type="button">Schließen</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <p class="status">History wird geladen ...</p>
+      </div>
+    </section>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
 
   <script>
@@ -385,6 +422,7 @@
       typeFilter: document.getElementById('typeFilter'),
       newBtn: document.getElementById('newBtn'),
       reloadBtn: document.getElementById('reloadBtn'),
+      historyBtn: document.getElementById('historyBtn'),
       logoutBtn: document.getElementById('logoutBtn'),
       status: document.getElementById('status'),
       stats: document.getElementById('stats'),
@@ -402,6 +440,9 @@
       editSortOrder: document.getElementById('editSortOrder'),
       editPattern: document.getElementById('editPattern'),
       deleteBtn: document.getElementById('deleteBtn'),
+      historyBackdrop: document.getElementById('historyBackdrop'),
+      closeHistoryBtn: document.getElementById('closeHistoryBtn'),
+      historyList: document.getElementById('historyList'),
       toast: document.getElementById('toast')
     };
 
@@ -632,6 +673,57 @@
       showToast('Gelöscht');
     }
 
+    function formatDate(value) {
+      if (!value) return '';
+      try { return new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(value)); }
+      catch { return String(value); }
+    }
+
+    function summarizeHistory(row) {
+      if (row.action === 'create') return 'neu angelegt';
+      if (row.action === 'delete') return 'gelöscht';
+      if (row.action === 'update') {
+        const oldData = row.old_data || {};
+        const newData = row.new_data || {};
+        const changed = [];
+        ['section_name', 'script_type', 'pattern', 'sort_order'].forEach(key => {
+          if (JSON.stringify(oldData[key] ?? null) !== JSON.stringify(newData[key] ?? null)) changed.push(key);
+        });
+        return changed.length ? 'geändert: ' + changed.join(', ') : 'geändert';
+      }
+      return row.action || 'geändert';
+    }
+
+    async function openHistory() {
+      els.historyBackdrop.classList.remove('hidden');
+      els.historyList.innerHTML = '<p class="status">History wird geladen ...</p>';
+      const { data, error } = await client.rpc('opsi_list_history', { p_token: sessionToken, p_limit: 200 });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      els.historyList.innerHTML = rows.map(row => `
+        <article class="history-item">
+          <div class="history-head">
+            <div>
+              <div class="history-title">${escapeHtml(row.section_name || '[unbekannt]')}</div>
+              <div class="history-meta">
+                <span>${escapeHtml(row.script_type || '')}</span>
+                <span>${escapeHtml(summarizeHistory(row))}</span>
+              </div>
+            </div>
+            <div class="history-meta">
+              <span>${escapeHtml(row.changed_by_username || 'unbekannt')}</span>
+              <span>${escapeHtml(formatDate(row.created_at))}</span>
+            </div>
+          </div>
+          <pre class="history-pre">${escapeHtml(JSON.stringify({ alt: row.old_data, neu: row.new_data }, null, 2))}</pre>
+        </article>
+      `).join('') || '<p class="status">Noch keine Änderungen protokolliert.</p>';
+    }
+
+    function closeHistory() {
+      els.historyBackdrop.classList.add('hidden');
+    }
+
     document.addEventListener('click', async event => {
       const jump = event.target.closest('[data-jump]');
       if (jump) {
@@ -671,15 +763,18 @@
     els.typeFilter.addEventListener('change', render);
     els.newBtn.addEventListener('click', () => openEditor());
     els.reloadBtn.addEventListener('click', () => loadSections().catch(error => showToast(error.message, true)));
+    els.historyBtn.addEventListener('click', () => openHistory().catch(error => showToast(error.message, true)));
     els.logoutBtn.addEventListener('click', () => logout().catch(() => showApp(false)));
     els.tocToggle.addEventListener('click', () => els.toc.classList.toggle('collapsed'));
     els.closeModalBtn.addEventListener('click', closeEditor);
+    els.closeHistoryBtn.addEventListener('click', closeHistory);
     els.modalBackdrop.addEventListener('click', event => { if (event.target === els.modalBackdrop) closeEditor(); });
+    els.historyBackdrop.addEventListener('click', event => { if (event.target === els.historyBackdrop) closeHistory(); });
     els.editForm.addEventListener('submit', event => saveEditor(event).catch(error => showToast(error.message, true)));
     els.deleteBtn.addEventListener('click', () => deleteCurrent().catch(error => showToast(error.message, true)));
 
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeEditor();
+      if (event.key === 'Escape') { closeEditor(); closeHistory(); }
     });
 
     if (sessionToken) {
