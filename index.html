@@ -304,28 +304,106 @@
     .modal-head h2 { margin: 0; }
     .form-grid { display:grid; grid-template-columns: 1fr 180px 120px; gap: 12px; }
     .modal-actions { display:flex; justify-content:flex-end; gap: 10px; margin-top: 14px; }
-    .history-list { display: grid; gap: 12px; }
+    .history-list {
+      display: grid;
+      gap: 14px;
+      position: relative;
+    }
     .history-item {
       border: 1px solid var(--line-soft);
       border-radius: 16px;
-      background: rgba(57,217,138,.05);
-      padding: 14px;
+      background: #0d100e;
+      overflow: hidden;
     }
-    .history-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom: 8px; }
-    .history-title { font-weight:900; }
-    .history-meta { color: var(--muted); font-size: 12px; display:flex; gap:8px; flex-wrap:wrap; }
-    .history-pre {
-      margin: 10px 0 0;
-      white-space: pre-wrap;
-      overflow-wrap:anywhere;
+    .history-head {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01));
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .history-title {
+      font-weight:900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .history-meta { color: var(--muted); font-size: 12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .history-badge {
+      display:inline-flex;
+      align-items:center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 900;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.045);
+      color: var(--muted);
+    }
+    .history-badge.create { color: #7ee6a3; background: rgba(46,160,67,.16); border-color: rgba(46,160,67,.42); }
+    .history-badge.update, .history-badge.info_update { color: #d7ffd5; background: rgba(56,212,125,.13); border-color: rgba(56,212,125,.34); }
+    .history-badge.delete { color: #ffb4b4; background: rgba(248,81,73,.13); border-color: rgba(248,81,73,.38); }
+    .history-summary {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .diff-stack { display: grid; gap: 12px; padding: 14px 16px 16px; }
+    .diff-file {
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0d1117;
+    }
+    .diff-file-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      color: #c9d1d9;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
       font-family: var(--mono);
       font-size: 12px;
-      line-height: 1.4;
-      color: #d8f8e5;
-      background: #090b0a;
-      border: 1px solid rgba(68,152,103,.24);
-      border-radius: 12px;
-      padding: 10px;
+      font-weight: 800;
+    }
+    .diff-counts { display:flex; gap: 7px; font-family: var(--mono); font-size: 11px; }
+    .diff-plus-count { color: #7ee787; }
+    .diff-minus-count { color: #ffa198; }
+    .diff-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .diff-table td { padding: 0; vertical-align: top; }
+    .diff-sign {
+      width: 28px;
+      user-select: none;
+      text-align: center;
+      color: #8b949e;
+      border-right: 1px solid rgba(48,54,61,.7);
+    }
+    .diff-code {
+      padding: 1px 10px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .diff-line.add { background: rgba(46,160,67,.18); }
+    .diff-line.add .diff-sign { color: #7ee787; background: rgba(46,160,67,.20); }
+    .diff-line.remove { background: rgba(248,81,73,.14); }
+    .diff-line.remove .diff-sign { color: #ffa198; background: rgba(248,81,73,.18); }
+    .diff-line.context { background: #0d1117; }
+    .diff-empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 14px 16px;
     }
 
     .toast {
@@ -874,13 +952,108 @@
       if (row.action === 'update') {
         const oldData = row.old_data || {};
         const newData = row.new_data || {};
-        const changed = [];
-        ['section_name', 'script_type', 'pattern', 'sort_order', 'info_text'].forEach(key => {
-          if (JSON.stringify(oldData[key] ?? null) !== JSON.stringify(newData[key] ?? null)) changed.push(key);
-        });
-        return changed.length ? 'geändert: ' + changed.join(', ') : 'geändert';
+        const changed = getChangedHistoryKeys(oldData, newData);
+        return changed.length ? changed.map(key => historyFieldLabels[key] || key).join(', ') + ' geändert' : 'geändert';
       }
       return row.action || 'geändert';
+    }
+
+    const historyFieldLabels = {
+      section_name: 'Sektion',
+      script_type: 'Datei',
+      pattern: 'Musteraufbau',
+      called_sections: 'Aufgerufene Sektionen',
+      sort_order: 'Sortierung',
+      info_text: 'Regeln/Infos'
+    };
+
+    function historyActionLabel(action) {
+      if (action === 'create') return 'Neu';
+      if (action === 'update') return 'Geändert';
+      if (action === 'delete') return 'Gelöscht';
+      if (action === 'info_update') return 'Info geändert';
+      return action || 'Änderung';
+    }
+
+    function getChangedHistoryKeys(oldData, newData) {
+      return Object.keys(historyFieldLabels).filter(key => {
+        const oldValue = oldData ? oldData[key] : undefined;
+        const newValue = newData ? newData[key] : undefined;
+        return JSON.stringify(oldValue ?? null) !== JSON.stringify(newValue ?? null);
+      });
+    }
+
+    function valueToLines(value) {
+      if (value === null || value === undefined) return [];
+      if (Array.isArray(value)) return value.map(item => String(item));
+      if (typeof value === 'object') return JSON.stringify(value, null, 2).split('\n');
+      return String(value).split('\n');
+    }
+
+    function buildLineDiff(oldLines, newLines) {
+      const m = oldLines.length;
+      const n = newLines.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = m - 1; i >= 0; i--) {
+        for (let j = n - 1; j >= 0; j--) {
+          dp[i][j] = oldLines[i] === newLines[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+      const out = [];
+      let i = 0;
+      let j = 0;
+      while (i < m && j < n) {
+        if (oldLines[i] === newLines[j]) {
+          out.push({ type: 'context', text: oldLines[i] });
+          i++;
+          j++;
+        } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+          out.push({ type: 'remove', text: oldLines[i++] });
+        } else {
+          out.push({ type: 'add', text: newLines[j++] });
+        }
+      }
+      while (i < m) out.push({ type: 'remove', text: oldLines[i++] });
+      while (j < n) out.push({ type: 'add', text: newLines[j++] });
+      return out;
+    }
+
+    function renderDiffFile(label, oldValue, newValue) {
+      const oldLines = valueToLines(oldValue);
+      const newLines = valueToLines(newValue);
+      const diff = buildLineDiff(oldLines, newLines);
+      const addCount = diff.filter(line => line.type === 'add').length;
+      const removeCount = diff.filter(line => line.type === 'remove').length;
+      if (!addCount && !removeCount) return '';
+      const rows = diff.map(line => {
+        const sign = line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' ';
+        return `<tr class="diff-line ${line.type}"><td class="diff-sign">${sign}</td><td class="diff-code">${escapeHtml(line.text)}</td></tr>`;
+      }).join('');
+      return `
+        <section class="diff-file">
+          <div class="diff-file-head">
+            <span>${escapeHtml(label)}</span>
+            <span class="diff-counts"><span class="diff-plus-count">+${addCount}</span><span class="diff-minus-count">-${removeCount}</span></span>
+          </div>
+          <table class="diff-table"><tbody>${rows}</tbody></table>
+        </section>
+      `;
+    }
+
+    function renderHistoryDiff(row) {
+      const oldData = row.old_data || {};
+      const newData = row.new_data || {};
+      let keys = getChangedHistoryKeys(oldData, newData);
+      if (row.action === 'create') keys = Object.keys(historyFieldLabels).filter(key => newData[key] !== undefined && newData[key] !== null && String(newData[key]).length > 0);
+      if (row.action === 'delete') keys = Object.keys(historyFieldLabels).filter(key => oldData[key] !== undefined && oldData[key] !== null && String(oldData[key]).length > 0);
+      const html = keys.map(key => renderDiffFile(historyFieldLabels[key] || key, oldData[key], newData[key])).filter(Boolean).join('');
+      return html || '<div class="diff-empty">Keine Detailänderungen vorhanden.</div>';
+    }
+
+    function renderHistoryTitle(row) {
+      const oldData = row.old_data || {};
+      const newData = row.new_data || {};
+      return row.section_name || newData.section_name || oldData.section_name || '[unbekannt]';
     }
 
     async function openHistory() {
@@ -893,9 +1066,12 @@
         <article class="history-item">
           <div class="history-head">
             <div>
-              <div class="history-title">${escapeHtml(row.section_name || '[unbekannt]')}</div>
+              <div class="history-title">
+                <span>${escapeHtml(renderHistoryTitle(row))}</span>
+                <span class="history-badge ${escapeHtml(row.action || '')}">${escapeHtml(historyActionLabel(row.action))}</span>
+              </div>
               <div class="history-meta">
-                <span>${escapeHtml(row.script_type || '')}</span>
+                <span>${escapeHtml(row.script_type || row.new_data?.script_type || row.old_data?.script_type || '')}</span>
                 <span>${escapeHtml(summarizeHistory(row))}</span>
               </div>
             </div>
@@ -904,7 +1080,8 @@
               <span>${escapeHtml(formatDate(row.created_at))}</span>
             </div>
           </div>
-          <pre class="history-pre">${escapeHtml(JSON.stringify({ alt: row.old_data, neu: row.new_data }, null, 2))}</pre>
+          <div class="history-summary">Änderungen wie in einer Diff-Ansicht: entfernte Zeilen rot, neue Zeilen grün.</div>
+          <div class="diff-stack">${renderHistoryDiff(row)}</div>
         </article>
       `).join('') || '<p class="status">Noch keine Änderungen protokolliert.</p>';
     }
