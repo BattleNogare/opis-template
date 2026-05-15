@@ -78,8 +78,7 @@ function filteredRows(){
   return rows.filter(r=>{
     if(f!=='all' && r.script_type!==f) return false;
     if(!q) return true;
-    return [r.section_name,r.script_type,r.pattern,(r.related_sections||[]).join(' ')].join('
-').toLowerCase().includes(q);
+    return [r.section_name,r.script_type,r.pattern,(r.related_sections||[]).join(' ')].join('\n').toLowerCase().includes(q);
   });
 }
 function render(msg=''){
@@ -101,14 +100,12 @@ function render(msg=''){
 }
 function getById(id){return rows.find(r=>(r.id||`local-${r.script_type}-${rows.indexOf(r)}`)===id);}
 window.copyPattern=async(id)=>{const r=getById(id); if(r) await navigator.clipboard.writeText(r.pattern||'');};
-window.openEditor=(id)=>{const r=getById(id); if(!r)return; $('dialogTitle').textContent='Gruppe bearbeiten'; $('rowId').value=r.id||''; $('sectionName').value=r.section_name||''; $('scriptType').value=r.script_type||'install.ins'; $('relatedSections').value=(r.related_sections||[]).join('
-'); $('pattern').value=r.pattern||''; $('deleteBtn').classList.toggle('hidden', !r.id); $('editor').showModal();};
+window.openEditor=(id)=>{const r=getById(id); if(!r)return; $('dialogTitle').textContent='Gruppe bearbeiten'; $('rowId').value=r.id||''; $('sectionName').value=r.section_name||''; $('scriptType').value=r.script_type||'install.ins'; $('relatedSections').value=(r.related_sections||[]).join('\n'); $('pattern').value=r.pattern||''; $('deleteBtn').classList.toggle('hidden', !r.id); $('editor').showModal();};
 $('addBtn').onclick=()=>{$('dialogTitle').textContent='Neue Gruppe'; $('rowId').value=''; $('sectionName').value=''; $('scriptType').value='install.ins'; $('relatedSections').value=''; $('pattern').value=''; $('deleteBtn').classList.add('hidden'); $('editor').showModal();};
 $('cancelBtn').onclick=()=>$('editor').close();
 $('editForm').onsubmit=async(e)=>{
   e.preventDefault();
-  const payload={section_name:$('sectionName').value.trim(), script_type:$('scriptType').value, related_sections:$('relatedSections').value.split(/
-|,/).map(s=>s.trim()).filter(Boolean), pattern:$('pattern').value, sort_order:rows.length+1};
+  const payload={section_name:$('sectionName').value.trim(), script_type:$('scriptType').value, related_sections:$('relatedSections').value.split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean), pattern:$('pattern').value, sort_order:rows.length+1};
   if(!payload.related_sections.length) payload.related_sections=[payload.section_name];
   const id=$('rowId').value;
   if(client){
