@@ -129,15 +129,17 @@
     .intro h1 { margin: 0 0 8px; font-size: 30px; }
     .intro p { margin: 0; color: var(--muted); }
     .intro-shell {
+      --intro-logo-size: auto;
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) minmax(320px, .9fr) 96px;
+      grid-template-columns: minmax(220px, .85fr) minmax(320px, 1.15fr) auto;
       gap: 18px;
-      align-items: start;
+      align-items: stretch;
       margin-right: 330px;
     }
     .intro-copy { min-width: 0; }
     .intro-info {
       min-width: 0;
+      width: 100%;
       border: 1px solid var(--line-soft);
       background: rgba(9, 11, 10, .56);
       border-radius: 16px;
@@ -161,12 +163,11 @@
       line-height: 1.45;
     }
     .intro-logo {
-      width: 96px;
-      height: 96px;
-      min-width: 96px;
-      min-height: 96px;
-      max-width: 96px;
-      max-height: 96px;
+      width: var(--intro-logo-size);
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      aspect-ratio: 1 / 1;
       border: 1px solid var(--line-soft);
       border-radius: 16px;
       background: #0d100e;
@@ -174,7 +175,7 @@
       place-items: center;
       overflow: hidden;
       justify-self: end;
-      align-self: start;
+      align-self: stretch;
     }
     .intro-logo img {
       width: 100%;
@@ -346,7 +347,7 @@
       .layout { grid-template-columns: 1fr; }
       .topbar-inner { margin-right: 0; grid-template-columns: 1fr auto; }
       .intro-shell { margin-right: 0; grid-template-columns: 1fr; }
-      .intro-logo { width: 88px; height: 88px; min-width: 88px; min-height: 88px; max-width: 88px; max-height: 88px; justify-self: start; }
+      .intro-logo { width: min(140px, 38vw); height: auto; aspect-ratio: 1 / 1; justify-self: start; align-self: start; }
       .status { display:none; }
       .toc { position: fixed; right: 0; top: 0; width: 310px; }
       .search-row { grid-column: 1 / -1; }
@@ -357,7 +358,7 @@
       .card-head { flex-direction: column; }
       .card-actions { justify-content: flex-start; }
       .main { padding: 16px; }
-      .intro-logo { width: 72px; height: 72px; min-width: 72px; min-height: 72px; max-width: 72px; max-height: 72px; }
+      .intro-logo { width: min(112px, 44vw); height: auto; aspect-ratio: 1 / 1; }
       .intro-info-head { align-items: stretch; flex-direction: column; }
     }
   </style>
@@ -984,6 +985,27 @@
     } else {
       showApp(false);
     }
+
+    function syncIntroLogoSize() {
+      const shell = document.querySelector('.intro-shell');
+      const logo = document.querySelector('.intro-logo');
+      if (!shell || !logo || logo.offsetParent === null) return;
+      if (window.matchMedia('(max-width: 1050px)').matches) {
+        shell.style.removeProperty('--intro-logo-size');
+        return;
+      }
+      const height = Math.max(0, Math.round(shell.getBoundingClientRect().height));
+      if (height > 0) shell.style.setProperty('--intro-logo-size', height + 'px');
+    }
+
+    const introLogoResizeObserver = new ResizeObserver(syncIntroLogoSize);
+    window.addEventListener('load', () => {
+      const shell = document.querySelector('.intro-shell');
+      if (shell) introLogoResizeObserver.observe(shell);
+      syncIntroLogoSize();
+    });
+    window.addEventListener('resize', syncIntroLogoSize);
+
   </script>
 </body>
 </html>
