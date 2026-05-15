@@ -6,16 +6,16 @@
   <title>opsi-Skript-Musterübersicht</title>
   <style>
     :root {
-      --bg: #0b1020;
-      --bg-soft: #0f172a;
-      --panel: #111827;
-      --panel-2: #172033;
-      --panel-3: #1f2937;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --line: #293449;
-      --accent: #38bdf8;
-      --accent-2: #22c55e;
+      --bg: #07130d;
+      --bg-soft: #0b1f15;
+      --panel: #0f1f17;
+      --panel-2: #132b1e;
+      --panel-3: #183525;
+      --text: #e8f5ee;
+      --muted: #9bb8a8;
+      --line: #254433;
+      --accent: #34d399;
+      --accent-2: #86efac;
       --danger: #fb7185;
       --warn: #fbbf24;
       --shadow: 0 18px 45px rgba(0,0,0,.35);
@@ -29,7 +29,7 @@
       margin: 0;
       font-family: var(--sans);
       color: var(--text);
-      background: radial-gradient(circle at top left, #122340 0, var(--bg) 38%, #070b14 100%);
+      background: radial-gradient(circle at top left, #123622 0, var(--bg) 42%, #030806 100%);
       min-height: 100vh;
     }
     header {
@@ -37,7 +37,7 @@
       top: 0;
       z-index: 30;
       border-bottom: 1px solid var(--line);
-      background: rgba(11,16,32,.92);
+      background: rgba(7,19,13,.92);
       backdrop-filter: blur(14px);
     }
     .topbar {
@@ -145,7 +145,7 @@
     .card.hidden { display: none; }
     .card-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
     .card h3 { margin: 0; font-size: 19px; color: #f8fafc; }
-    .type { color: #bae6fd; background: rgba(56,189,248,.12); border-color: rgba(56,189,248,.25); }
+    .type { color: #bae6fd; background: rgba(52,211,153,.12); border-color: rgba(56,189,248,.25); }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .body { margin-top: 13px; color: #d1d5db; line-height: 1.55; }
     .body ul { padding-left: 22px; }
@@ -236,8 +236,8 @@
         <option value="remove.inc.ins">remove.inc.ins</option>
       </select>
       <button class="primary" id="addBtn">+ Neue Sektion</button>
-      <button id="syncBtn">↻ Laden</button>
-      <button id="configBtn">Supabase</button>
+      <button id="syncBtn">↻ Aktualisieren</button>
+      <button id="configBtn" style="display:none">Konfiguration</button>
       <button id="tocToggleTop">Inhalt</button>
     </div>
   </header>
@@ -246,12 +246,12 @@
     <section>
       <div class="hero">
         <h1>opsi-Skript-Musterübersicht</h1>
-        <div class="muted">GitHub-Pages-Frontend mit Supabase als Datenspeicher. Änderungen werden direkt in der Supabase-Tabelle gespeichert.</div>
+        <div class="muted">Interne Musterübersicht. Änderungen werden zentral gespeichert.</div>
         <div class="statusbar">
-          <span class="pill"><span id="statusDot" class="dot"></span><span id="connectionStatus">Nicht verbunden</span></span>
+          <span class="pill"><span id="statusDot" class="dot"></span><span id="connectionStatus">Nicht geladen</span></span>
           <span class="pill" id="resultInfo">0 Sektionen</span>
-          <span class="pill" id="dbInfo">Tabelle: opsi_sections</span>
-          <button id="seedBtn" class="ghost">Initialdaten in Supabase schreiben</button>
+          <span class="pill" id="dbInfo">Datenstand wird geladen</span>
+          <button id="seedBtn" class="ghost">Initialdaten schreiben</button>
           <button id="exportJsonBtn" class="ghost">JSON exportieren</button>
         </div>
       </div>
@@ -296,26 +296,26 @@
     </form>
   </dialog>
 
-  <dialog id="configDialog">
+  <dialog id="configDialog" aria-hidden="true" style="display:none">
     <form method="dialog" id="configForm">
       <div class="modal-head">
-        <strong>Supabase verbinden</strong>
+        <strong>Konfiguration</strong>
         <button value="cancel" type="button" id="closeConfig">✕</button>
       </div>
       <div class="modal-body">
-        <p class="muted">Trage die Werte aus deinem Supabase-Projekt ein. Der Anon/Public-Key wird im Browser verwendet und darf niemals durch den Service-Role-Key ersetzt werden.</p>
+        <p class="muted">Die technische Konfiguration ist fest im HTML-Code hinterlegt.</p>
         <div class="config-grid">
-          <label>Supabase URL
-            <input id="supabaseUrl" placeholder="https://slhsztezkbrgmkuiiozc.supabase.co">
+          <label>Basis-URL
+            <input id="supabaseUrl" placeholder="https://deinprojekt.supabase.co">
           </label>
-          <label>Anon/Public Key
-            <input id="supabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsaHN6dGV6a2JyZ21rdWlpb3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzMwNzYsImV4cCI6MjA5NDQwOTA3Nn0.rPfBxRJ53gf5-h5S4MwiQijlIg4BLpsXjRPvtIdQ-PE">
+          <label>Öffentlicher Schlüssel
+            <input id="supabaseAnonKey" placeholder="eyJ...">
           </label>
         </div>
       </div>
       <div class="modal-foot">
-        <button type="button" id="clearConfig">Konfiguration löschen</button>
-        <button type="submit" class="primary">Speichern & verbinden</button>
+        <button type="button" id="clearConfig">Zurücksetzen</button>
+        <button type="submit" class="primary">Speichern</button>
       </div>
     </form>
   </dialog>
@@ -326,7 +326,13 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
     const TABLE = 'opsi_sections';
-    const CONFIG_KEY = 'opsi_supabase_config_v1';
+
+    // HIER DEINE SUPABASE-DATEN FEST EINTRAGEN:
+    // Beispiel: const SUPABASE_URL = 'https://abcxyz.supabase.co';
+    // Wichtig: Hier nur den Anon/Public-Key eintragen, niemals den Service-Role-Key.
+    const SUPABASE_URL = 'https://slhsztezkbrgmkuiiozc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsaHN6dGV6a2JyZ21rdWlpb3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzMwNzYsImV4cCI6MjA5NDQwOTA3Nn0.rPfBxRJ53gf5-h5S4MwiQijlIg4BLpsXjRPvtIdQ-PE';
+
     const initial = JSON.parse(document.getElementById('initialData').textContent);
 
     let supabase = null;
@@ -346,9 +352,12 @@
     const configDialog = qs('configDialog');
 
     function loadConfig() {
-      try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); } catch { return {}; }
+      return { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY };
     }
-    function saveConfig() { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); }
+    function saveConfig() {
+      // Konfiguration wird absichtlich nicht mehr im Browser gespeichert,
+      // sondern fest über SUPABASE_URL und SUPABASE_ANON_KEY im HTML gesetzt.
+    }
     function newId() { return 'custom-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
     function slug(s) { return String(s).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase(); }
     function toast(msg) {
@@ -364,13 +373,13 @@
     function initClient() {
       if (!config.url || !config.anonKey) {
         supabase = null;
-        setStatus('warn', 'Supabase nicht konfiguriert');
+        setStatus('warn', 'Nicht geladen');
         return false;
       }
       supabase = createClient(config.url, config.anonKey);
       qs('supabaseUrl').value = config.url || '';
       qs('supabaseAnonKey').value = config.anonKey || '';
-      setStatus('warn', 'Supabase konfiguriert');
+      setStatus('warn', 'Bereit');
       return true;
     }
 
@@ -380,14 +389,14 @@
         render();
         return;
       }
-      setStatus('warn', 'Lade Daten ...');
+      setStatus('warn', 'Daten werden geladen ...');
       const { data, error } = await supabase
         .from(TABLE)
         .select('id, script_type, title, body, sort_order, updated_at')
         .order('script_type', { ascending: true })
         .order('sort_order', { ascending: true });
       if (error) {
-        setStatus('bad', 'Fehler: ' + error.message);
+        setStatus('bad', 'Fehler beim Laden');
         entries = [];
         render();
         return;
@@ -399,13 +408,13 @@
         body: row.body || '',
         sort_order: row.sort_order || 0
       }));
-      setStatus('ok', 'Verbunden');
+      setStatus('ok', 'Geladen');
       render();
-      if (!entries.length) toast('Keine Daten in Supabase gefunden. Initialdaten können importiert werden.');
+      if (!entries.length) toast('Keine Daten gefunden. Initialdaten können importiert werden.');
     }
 
     async function upsertEntry(item) {
-      if (!supabase && !initClient()) throw new Error('Supabase ist nicht konfiguriert.');
+      if (!supabase && !initClient()) throw new Error('Datenquelle ist nicht konfiguriert.');
       const payload = {
         id: item.id,
         script_type: item.type,
@@ -418,16 +427,16 @@
     }
 
     async function deleteEntry(id) {
-      if (!supabase && !initClient()) throw new Error('Supabase ist nicht konfiguriert.');
+      if (!supabase && !initClient()) throw new Error('Datenquelle ist nicht konfiguriert.');
       const { error } = await supabase.from(TABLE).delete().eq('id', id);
       if (error) throw error;
     }
 
     async function seedInitialData() {
-      if (!supabase && !initClient()) { toast('Bitte zuerst Supabase konfigurieren.'); return; }
-      const ok = confirm('Initialdaten in Supabase schreiben? Bestehende IDs werden aktualisiert.');
+      if (!supabase && !initClient()) { toast('Technische Konfiguration prüfen.'); return; }
+      const ok = confirm('Initialdaten schreiben? Bestehende IDs werden aktualisiert.');
       if (!ok) return;
-      setStatus('warn', 'Schreibe Initialdaten ...');
+      setStatus('warn', 'Initialdaten werden geschrieben ...');
       const rows = initial.entries.map((e, idx) => ({
         id: e.id,
         script_type: e.type,
@@ -439,7 +448,7 @@
       for (let i = 0; i < rows.length; i += chunkSize) {
         const chunk = rows.slice(i, i + chunkSize);
         const { error } = await supabase.from(TABLE).upsert(chunk, { onConflict: 'id' });
-        if (error) { setStatus('bad', 'Importfehler: ' + error.message); return; }
+        if (error) { setStatus('bad', 'Fehler beim Import'); return; }
       }
       toast('Initialdaten importiert.');
       await loadFromSupabase();
@@ -498,7 +507,7 @@
       content.innerHTML = '';
       toc.innerHTML = '';
       if (!entries.length) {
-        content.innerHTML = '<div class="empty">Keine Sektionen geladen. Konfiguriere Supabase oder schreibe die Initialdaten in die Datenbank.</div>';
+        content.innerHTML = '<div class="empty">Keine Sektionen geladen. Technische Konfiguration prüfen oder Initialdaten schreiben.</div>';
         return;
       }
       const groups = ['install.ins', 'remove.ins', 'remove.inc.ins'];
@@ -615,19 +624,13 @@ ${e?.title || editingId}`)) return;
     qs('closeConfig').addEventListener('click', () => configDialog.close());
     qs('configForm').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      config = { url: qs('supabaseUrl').value.trim(), anonKey: qs('supabaseAnonKey').value.trim() };
-      saveConfig();
+      config = loadConfig();
       configDialog.close();
-      toast('Supabase-Konfiguration gespeichert.');
+      toast('Technische Konfiguration wird aus dem HTML-Code verwendet.');
       await loadFromSupabase();
     });
     qs('clearConfig').addEventListener('click', () => {
-      localStorage.removeItem(CONFIG_KEY);
-      config = {};
-      qs('supabaseUrl').value = '';
-      qs('supabaseAnonKey').value = '';
-      setStatus('warn', 'Supabase nicht konfiguriert');
-      toast('Konfiguration gelöscht.');
+      toast('Die technische Konfiguration ist fest im HTML hinterlegt.');
     });
     searchInput.addEventListener('input', render);
     typeFilter.addEventListener('change', render);
