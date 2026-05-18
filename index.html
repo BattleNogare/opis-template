@@ -250,6 +250,13 @@
       font-size: inherit;
       border-style: dashed;
     }
+    .pattern-stack { display: grid; gap: 12px; }
+    .pattern-block { border: 1px solid rgba(68,152,103,.20); border-radius: 16px; background: rgba(8,10,9,.48); overflow: hidden; }
+    .pattern-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(68,152,103,.18); background: rgba(255,255,255,.025); }
+    .pattern-files { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pattern-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .pattern-block .code { border: 0; border-radius: 0; background: #090b0a; }
+
 
     .toc {
       position: sticky;
@@ -476,7 +483,7 @@
           <div class="intro-shell">
             <div class="intro-copy">
               <h1>opsi Musterübersicht</h1>
-              <p>Einzelsektionen mit klickbaren Verbindungen zu aufgerufenen Sektionen.</p>
+              <p>Alle Sektionen zusammengeführt nach Namen, mit klickbaren Verbindungen zu aufgerufenen Sektionen.</p>
               <div id="stats" class="stats"></div>
             </div>
             <div class="intro-info">
@@ -485,13 +492,9 @@
                   <div class="intro-info-title">Regeln / Infos</div>
                   <p id="infoStatus" class="status" style="display:block;margin-top:4px">Bereit</p>
                 </div>
-                <select id="infoType" class="select" style="max-width:180px">
-                  <option value="install.ins">install.ins</option>
-                  <option value="remove.ins">remove.ins</option>
-                  <option value="remove.inc.ins">remove.inc.ins</option>
-                </select>
+                <input id="infoType" type="hidden" value="general" />
               </div>
-              <textarea id="infoText" class="input info-textarea" placeholder="Regeln oder Infos zu dieser Datei eintragen ..."></textarea>
+              <textarea id="infoText" class="input info-textarea" placeholder="Allgemeine Regeln oder Infos eintragen ..."></textarea>
               <div style="display:flex;justify-content:flex-end;gap:8px">
                 <button id="saveInfoBtn" class="btn small primary" type="button">Infos speichern</button>
               </div>
@@ -506,12 +509,7 @@
           <div class="topbar-inner">
             <div class="search-row">
               <input id="searchInput" class="input" placeholder="Sektion oder Muster suchen ..." />
-              <select id="typeFilter" class="select">
-                <option value="all">Alle Dateien</option>
-                <option value="install.ins">install.ins</option>
-                <option value="remove.ins">remove.ins</option>
-                <option value="remove.inc.ins">remove.inc.ins</option>
-              </select>
+              <input id="typeFilter" type="hidden" value="all" />
             </div>
             <button id="newBtn" class="btn primary" type="button">+ Sektion</button>
             <button id="reloadBtn" class="btn" type="button">Neu laden</button>
@@ -759,7 +757,7 @@
       if (!els.infoType || !els.infoText) return;
       const type = els.infoType.value;
       els.infoText.value = scriptInfos[type] || '';
-      els.infoStatus.textContent = type;
+      els.infoStatus.textContent = 'Allgemein';
     }
 
     async function saveScriptInfo() {
@@ -774,7 +772,7 @@
       scriptInfos[type] = els.infoText.value;
       els.infoStatus.textContent = 'Gespeichert';
       showToast('Infos gespeichert');
-      window.setTimeout(() => { if (els.infoType.value === type) els.infoStatus.textContent = type; }, 1400);
+      window.setTimeout(() => { if (els.infoType.value === type) els.infoStatus.textContent = 'Allgemein'; }, 1400);
     }
 
     async function loadSections() {
@@ -793,97 +791,157 @@
       render();
     }
 
-    function filteredSections() {
-      const q = els.searchInput.value.trim().toLowerCase();
-      const type = els.typeFilter.value;
-      return sections.filter(row => {
-        const typeOk = type === 'all' || row.script_type === type;
-        const text = `${row.section_name}\n${row.script_type}\n${row.pattern}\n${(row.called_sections || []).join(' ')}`.toLowerCase();
-        return typeOk && (!q || text.includes(q));
+    function sectionGroupKey(name) {
+      return sectionClean(name).toLowerCase();
+    }
+
+    function groupId(name) {
+      return 'sec-group-' + sectionGroupKey(name).replace(/[^a-zA-Z0-9_-]/g, '-');
+    }
+
+    function uniqueValues(values) {
+      return [...new Set(values.filter(Boolean))];
+    }
+
+    function buildSectionGroups() {
+      const map = new Map();
+      sections.forEach(row => {
+        const key = sectionGroupKey(row.section_name);
+        if (!map.has(key)) {
+          map.set(key, {
+            key,
+            section_name: row.section_name,
+            rows: [],
+            called_sections: [],
+            files: [],
+            sort_order: Number(row.sort_order ?? 9999)
+          });
+        }
+        const group = map.get(key);
+        group.rows.push(row);
+        group.called_sections = uniqueValues(group.called_sections.concat(row.called_sections || []));
+        group.files = uniqueValues(group.files.concat(row.script_type));
+        group.sort_order = Math.min(group.sort_order, Number(row.sort_order ?? 9999));
+      });
+      return [...map.values()].sort((a, b) => {
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        return sectionClean(a.section_name).localeCompare(sectionClean(b.section_name), 'de');
       });
     }
 
-    function findTarget(sectionName, scriptType) {
-      const exact = sections.find(row => row.section_name === sectionName && row.script_type === scriptType);
-      if (exact) return exact;
-      return sections.find(row => row.section_name === sectionName) || null;
+    function filteredGroups() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      return buildSectionGroups().filter(group => {
+        const text = [
+          group.section_name,
+          group.files.join(' '),
+          group.called_sections.join(' '),
+          ...group.rows.map(row => row.pattern || '')
+        ].join('\n').toLowerCase();
+        return !q || text.includes(q);
+      });
     }
 
-    function jumpToSection(sectionName, scriptType) {
-      const target = findTarget(sectionName, scriptType);
+    function findTarget(sectionName) {
+      const wanted = sectionGroupKey(sectionName);
+      return buildSectionGroups().find(group => group.key === wanted) || null;
+    }
+
+    function jumpToSection(sectionName) {
+      const target = findTarget(sectionName);
       if (!target) {
         showToast('Zielsektion nicht gefunden: ' + sectionName, true);
         return;
       }
-      const element = document.getElementById(cssId(target.id));
+      const element = document.getElementById(groupId(target.section_name));
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        history.replaceState(null, '', '#' + cssId(target.id));
+        history.replaceState(null, '', '#' + groupId(target.section_name));
       }
     }
 
-    function renderPattern(row) {
+    function renderPattern(row, group) {
       let html = escapeHtml(row.pattern || '');
-      const calls = row.called_sections || [];
+      const calls = group.called_sections || [];
       calls
         .map(name => ({ full: name, clean: sectionClean(name) }))
         .sort((a, b) => b.clean.length - a.clean.length)
         .forEach(call => {
           const escapedClean = call.clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const regex = new RegExp('\\b' + escapedClean + '\\b', 'g');
-          html = html.replace(regex, `<button class="code-link" type="button" data-jump="${escapeHtml(call.full)}" data-type="${escapeHtml(row.script_type)}">${escapeHtml(call.clean)}</button>`);
+          html = html.replace(regex, `<button class="code-link" type="button" data-jump="${escapeHtml(call.full)}">${escapeHtml(call.clean)}</button>`);
         });
       return html;
     }
 
-    function renderStats(rows) {
-      const counts = {
-        'install.ins': sections.filter(r => r.script_type === 'install.ins').length,
-        'remove.ins': sections.filter(r => r.script_type === 'remove.ins').length,
-        'remove.inc.ins': sections.filter(r => r.script_type === 'remove.inc.ins').length
-      };
+    function patternVariants(group) {
+      const map = new Map();
+      group.rows.forEach(row => {
+        const key = row.pattern || '';
+        if (!map.has(key)) map.set(key, { pattern: row.pattern || '', rows: [], files: [] });
+        const variant = map.get(key);
+        variant.rows.push(row);
+        variant.files = uniqueValues(variant.files.concat(row.script_type));
+      });
+      return [...map.values()].sort((a, b) => (a.files[0] || '').localeCompare(b.files[0] || ''));
+    }
+
+    function renderStats(groups) {
       els.stats.innerHTML = `
-        <span class="pill">Sichtbar: ${rows.length}</span>
-        <span class="pill">install.ins: ${counts['install.ins']}</span>
-        <span class="pill">remove.ins: ${counts['remove.ins']}</span>
-        <span class="pill">remove.inc.ins: ${counts['remove.inc.ins']}</span>
+        <span class="pill">Sektionen: ${groups.length}</span>
+        <span class="pill">Muster: ${sections.length}</span>
       `;
     }
 
     function render() {
-      const rows = filteredSections();
-      renderStats(rows);
-      els.content.innerHTML = rows.map(row => {
-        const calls = (row.called_sections || []).map(call => {
-          const target = findTarget(call, row.script_type);
-          const href = target ? '#' + cssId(target.id) : '#';
-          return `<a class="call-link" href="${href}" data-jump="${escapeHtml(call)}" data-type="${escapeHtml(row.script_type)}">${escapeHtml(call)}</a>`;
+      const groups = filteredGroups();
+      renderStats(groups);
+      els.content.innerHTML = groups.map(group => {
+        const calls = (group.called_sections || []).map(call => {
+          const target = findTarget(call);
+          const href = target ? '#' + groupId(target.section_name) : '#';
+          return `<a class="call-link" href="${href}" data-jump="${escapeHtml(call)}">${escapeHtml(call)}</a>`;
+        }).join('');
+
+        const variants = patternVariants(group).map((variant, index) => {
+          const representative = variant.rows[0];
+          const fileBadges = variant.files.map(file => `<span class="pill">${escapeHtml(file)}</span>`).join('');
+          const editButtons = variant.rows.map(row => `<button class="btn small" type="button" data-edit="${escapeHtml(row.id)}">Bearbeiten</button>`).join('');
+          return `
+            <section class="pattern-block">
+              <div class="pattern-head">
+                <div class="pattern-files">${fileBadges}</div>
+                <div class="pattern-actions">
+                  <button class="btn small" type="button" data-copy="${escapeHtml(representative.id)}">Kopieren</button>
+                  ${editButtons}
+                </div>
+              </div>
+              <div class="code">${renderPattern(representative, group)}</div>
+            </section>
+          `;
         }).join('');
 
         return `
-          <article id="${cssId(row.id)}" class="section-card" data-id="${escapeHtml(row.id)}">
+          <article id="${groupId(group.section_name)}" class="section-card">
             <div class="card-head">
               <div>
-                <h2 class="card-title">${escapeHtml(row.section_name)}</h2>
+                <h2 class="card-title">${escapeHtml(group.section_name)}</h2>
                 <div class="card-meta">
-                  <span class="pill">${escapeHtml(row.script_type)}</span>
-                  <span class="pill">Aufrufe: ${(row.called_sections || []).length}</span>
+                  <span class="pill">Dateien: ${escapeHtml(group.files.join(', '))}</span>
+                  <span class="pill">Muster: ${patternVariants(group).length}</span>
+                  <span class="pill">Aufrufe: ${(group.called_sections || []).length}</span>
                 </div>
-              </div>
-              <div class="card-actions">
-                <button class="btn small" type="button" data-copy="${escapeHtml(row.id)}">Kopieren</button>
-                <button class="btn small" type="button" data-edit="${escapeHtml(row.id)}">Bearbeiten</button>
               </div>
             </div>
             ${calls ? `<div class="calls">${calls}</div>` : ''}
-            <div class="code">${renderPattern(row)}</div>
+            <div class="pattern-stack">${variants}</div>
           </article>
         `;
       }).join('') || '<section class="intro"><p>Keine passenden Sektionen gefunden.</p></section>';
 
-      els.tocList.innerHTML = rows.map(row => `
-        <a class="toc-link" href="#${cssId(row.id)}" title="${escapeHtml(row.section_name)}">
-          ${escapeHtml(row.script_type)} · ${escapeHtml(row.section_name)}
+      els.tocList.innerHTML = groups.map(group => `
+        <a class="toc-link" href="#${groupId(group.section_name)}" title="${escapeHtml(group.section_name)}">
+          ${escapeHtml(group.section_name)}
         </a>
       `).join('');
     }
@@ -893,7 +951,7 @@
       els.modalTitle.textContent = isNew ? 'Neue Sektion' : 'Sektion bearbeiten';
       els.editId.value = row?.id || '';
       els.editSectionName.value = row?.section_name || '[Neue_Sektion]';
-      els.editScriptType.value = row?.script_type || (els.typeFilter.value === 'all' ? 'install.ins' : els.typeFilter.value);
+      els.editScriptType.value = row?.script_type || 'install.ins';
       els.editSortOrder.value = row?.sort_order ?? 9999;
       els.editPattern.value = row?.pattern || '[Neue_Sektion]\n';
       els.deleteBtn.classList.toggle('hidden', isNew);
@@ -1134,7 +1192,7 @@
     els.toggleRegisterBtn.addEventListener('click', () => setRegisterMode(!registerMode));
 
     els.searchInput.addEventListener('input', render);
-    els.typeFilter.addEventListener('change', render);
+    if (els.typeFilter) els.typeFilter.addEventListener('change', render);
     els.newBtn.addEventListener('click', () => openEditor());
     els.reloadBtn.addEventListener('click', () => loadInitialData().catch(error => showToast(error.message, true)));
     els.infoType.addEventListener('change', renderInfoEditor);
